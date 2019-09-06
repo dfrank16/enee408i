@@ -6,11 +6,19 @@
 #define inRightA 4
 #define inRightB 5
 
-const int out=12;
-const int in=13;
+const int pingOutM=12;
+const int pingInM=13;
+
+const int pingOutL=8;
+const int pingInL=6;
+
+const int pingOutR=2;
+const int pingInR=7;
 
 int motorComp = 5;
-int motorSpeed = 50;
+int motorSpeed = 30;
+
+long pingMDist, pingLDist, pingRDist;
 
 void setup() {
   pinMode(leftWheel, OUTPUT);
@@ -20,35 +28,141 @@ void setup() {
   pinMode(inRightA, OUTPUT);
   pinMode(inRightB, OUTPUT);
 
-  pinMode(out,OUTPUT);
-  pinMode(in,INPUT);
+  pinMode(pingOutM,OUTPUT);
+  pinMode(pingInM,INPUT);
+  pinMode(pingOutL,OUTPUT);
+  pinMode(pingInL,INPUT);
+  pinMode(pingOutR,OUTPUT);
+  pinMode(pingInR,INPUT);
   
   Serial.begin(9600);
 }
 
 void loop() {
-  /*digitalWrite(inLeftA, HIGH);
+  pingDistance();
+
+  if (pingMDist <= 8) {
+    Serial.print("Close to middle\n");
+    moveBack();
+    delay(1000);
+    turnAround();
+  } else if (pingLDist <= 8) {
+    Serial.print("Close to left\n");
+    turnRight();
+  } else if (pingRDist <= 8) {
+    Serial.print("Close to right\n");
+    turnLeft();
+  } else {
+    moveStraight();
+  }
+
+  delay(100);
+}
+
+void pingDistance(void) {
+  long dur;
+  
+  /* M */
+  digitalWrite(pingOutM,LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingOutM,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pingOutM,LOW);
+
+  dur=pulseIn(pingInM,HIGH);
+  pingMDist = microsecondsToInches(dur);
+
+  /* L */
+  digitalWrite(pingOutL,LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingOutL,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pingOutL,LOW);
+
+  dur=pulseIn(pingInL,HIGH);
+  pingLDist = microsecondsToInches(dur);
+  Serial.println();
+  Serial.print(pingLDist);
+  Serial.println();
+
+  /* R */
+  digitalWrite(pingOutR,LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingOutR,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pingOutR,LOW);
+
+  dur=pulseIn(pingInR,HIGH);
+  pingRDist = microsecondsToInches(dur);
+}
+
+void moveStraight(void) {
+  digitalWrite(inLeftA, HIGH);
   digitalWrite(inLeftB, LOW);
   digitalWrite(inRightA, LOW);
   digitalWrite(inRightB, HIGH);
   
   analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
   analogWrite(rightWheel, motorSpeed + motorComp); // Send PWM signal to motor B
-*/
+  
+  Serial.print("Straight\n");
+}
 
-  long dur;
-  long dis;
+void moveBack(void) {
+  digitalWrite(inLeftA, LOW);
+  digitalWrite(inLeftB, HIGH);
+  digitalWrite(inRightA, HIGH);
+  digitalWrite(inRightB, LOW);
+  
+  analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
+  analogWrite(rightWheel, motorSpeed + motorComp); // Send PWM signal to motor B
+  
+  Serial.print("Backwards\n");
+}
 
-  digitalWrite(out,LOW);
-  delayMicroseconds(2);
+void turnAround(void) {
+  digitalWrite(inLeftA, LOW);
+  digitalWrite(inLeftB, HIGH);
+  digitalWrite(inRightA, LOW);
+  digitalWrite(inRightB, HIGH);
+  
+  analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
+  analogWrite(rightWheel, motorSpeed + motorComp); // Send PWM signal to motor B
+  
+  Serial.print("Turn Around\n");
 
-  digitalWrite(out,HIGH);
-  delayMicroseconds(10);
-  digitalWrite(out,LOW);
+  delay(1000);
+}
 
-  dur=pulseIn(in,HIGH);
+void turnLeft(void) {
+  digitalWrite(inLeftA, LOW);
+  digitalWrite(inLeftB, HIGH);
+  digitalWrite(inRightA, LOW);
+  digitalWrite(inRightB, HIGH);
+  
+  analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
+  analogWrite(rightWheel, motorSpeed + motorComp); // Send PWM signal to motor B
+  
+  Serial.print("Turn left\n");
 
-  Serial.println(String(dur));
+  delay(500);
+}
 
-  delay(100);
+void turnRight(void) {
+  digitalWrite(inLeftA, HIGH);
+  digitalWrite(inLeftB, LOW);
+  digitalWrite(inRightA, HIGH);
+  digitalWrite(inRightB, LOW);
+  
+  analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
+  analogWrite(rightWheel, motorSpeed + motorComp); // Send PWM signal to motor B
+  
+  Serial.print("Turn right\n");
+  
+  delay(500);
+}
+
+
+long microsecondsToInches(long microseconds) {
+  return microseconds / 74 / 2;
 }
