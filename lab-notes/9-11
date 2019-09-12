@@ -1,0 +1,19 @@
+Today we re-wired our base on Murphy so that our ping sensors are nice and clean.
+We replaced our small breadboard with a larger one it will be less crowded.
+
+We started looking into using the Jetson GPIO pins for the ping sensors and motor driver.
+We concluded that while it is possible to use the Jetson pins for this, it would be a right
+pain in the butt. 
+
+We decided that we will use a Raspberry Pi instead of the Arduino for controlling motor driver
+and the ping sensors. We did this because the Pi's GPIO is easier to use than the Jetson's, it's
+faster processesor will let us use the encoder features on the motors so we can be more precise in movement,
+and we can use Python libraries to more easily interface with these features. 
+
+Our next steps will be to write code on the Pi to replace our Arudino, and to make additional 
+platforms that we can mount to Murphy so that we can start messing with the camera and the echo. 
+
+At the end of this lab session we found that something has been mis-wired or broken on Murphy. 
+We suspect this to be a problem with how the power has been connected. We plan to meet on Friday for
+a couple of hours in the lab to solve this problem so Mark can get started translating our motion code
+from the Arduino to the Raspberry Pi. 
