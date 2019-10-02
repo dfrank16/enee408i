@@ -1,24 +1,32 @@
+#define rightWheel 10
+#define inRightA 8
+#define inRightB 9
+
 #define leftWheel 11
-#define inRightA 9
-#define inRightB 10
+#define inLeftA 13
+#define inLeftB 12
 
-#define rightWheel 3
-#define inLeftA 4
-#define inLeftB 5
+const int pingEchoM=7;
+const int pingTrigM=6;
 
-const int pingEchoM=12;
-const int pingTrigM=13;
+const int pingEchoL=2;
+const int pingTrigL=1;
 
-const int pingEchoL=8;
-const int pingTrigL=6;
-
-const int pingEchoR=2;
-const int pingTrigR=7;
+const int pingEchoR=5;
+const int pingTrigR=4;
 
 int motorComp = 6;
 int motorSpeed = 35;
 
 long pingMDist, pingLDist, pingRDist;
+
+int state = 1;
+// 0 -> stopped
+// 1 -> forward
+// 2 -> backward
+// 3 -> left
+// 4 -> right
+
 
 void setup() {
   pinMode(leftWheel, OUTPUT);
@@ -35,28 +43,29 @@ void setup() {
   pinMode(pingEchoR,INPUT);
   pinMode(pingTrigR,OUTPUT);
   
-  Serial.begin(9600);
+  Serial.begin(19200);
 }
 
 void loop() {
   pingDistance();
 
-  if (pingMDist <= 15) {
-    Serial.print("Close to middle\n");
-    moveBack();
-    delay(1000);
-    turnAround();
-  } else if (pingLDist <= 15) {
-    Serial.print("Close to left\n");
-    turnLeft();
-  } else if (pingRDist <= 15) {
-    Serial.print("Close to right\n");
-    turnRight();
-  } else {
+ // if (pingMDist <= 8) {
+  //  Serial.print("Close to middle\n");
+ //   moveBack();
+ //   delay(1000);
+ //   turnAround();
+ // } else {
+    if (pingLDist <= 15) {
+      turnRight();
+    }
+    else if(pingRDist <= 15) {
+      turnLeft();
+    } else {
     moveStraight();
-  }
-
-  delay(100);
+    }
+  //}
+  
+  delay(200);
 }
 
 void pingDistance(void) {
@@ -74,7 +83,7 @@ void pingDistance(void) {
   Serial.print("M-dist: ");
   Serial.println(pingMDist);
   /* L */
-  delay(100);
+  delay(200);
   digitalWrite(pingTrigL,LOW);
   delayMicroseconds(2);
   digitalWrite(pingTrigL,HIGH);
@@ -87,7 +96,7 @@ void pingDistance(void) {
   Serial.println(pingLDist);
 
   /* R */
-  delay(100);
+  delay(200);
   digitalWrite(pingTrigR,LOW);
   delayMicroseconds(2);
   digitalWrite(pingTrigR,HIGH);
@@ -100,70 +109,103 @@ void pingDistance(void) {
   Serial.println(pingRDist);
 }
 
+void moveStop(void) {
+  if(state != 0){
+    digitalWrite(inLeftA, LOW);
+    digitalWrite(inLeftB, LOW);
+    digitalWrite(inRightA, LOW);
+    digitalWrite(inRightB, LOW);
+    state = 0;
+    Serial.print("State is set to stop\n");
+  }
+  //Serial.print("Sate is Stop\n");
+  
+}
+
 void moveStraight(void) {
-  digitalWrite(inLeftA, HIGH);
-  digitalWrite(inLeftB, LOW);
-  digitalWrite(inRightA, LOW);
-  digitalWrite(inRightB, HIGH);
-  
-  analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
-  analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
-  
-  Serial.print("Straight\n");
+  if(state != 1){
+    digitalWrite(inLeftA, HIGH);
+    digitalWrite(inLeftB, LOW);
+    digitalWrite(inRightA, LOW);
+    digitalWrite(inRightB, HIGH);
+    analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
+    analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
+    state = 1;
+    Serial.print("State is set to Straight\n");
+  }
+
+  //Serial.print("State is Straight\n");
 }
 
 void moveBack(void) {
-  digitalWrite(inLeftA, LOW);
-  digitalWrite(inLeftB, HIGH);
-  digitalWrite(inRightA, HIGH);
-  digitalWrite(inRightB, LOW);
+  if(state != 2) {
+    digitalWrite(inLeftA, LOW);
+    digitalWrite(inLeftB, HIGH);
+    digitalWrite(inRightA, HIGH);
+    digitalWrite(inRightB, LOW);
   
-  analogWrite(leftWheel, motorSpeed+ motorComp); // Send PWM signal to motor A
-  analogWrite(rightWheel, motorSpeed ); // Send PWM signal to motor B
-  
-  Serial.print("Backwards\n");
+    analogWrite(leftWheel, motorSpeed+ motorComp); // Send PWM signal to motor A
+    analogWrite(rightWheel, motorSpeed ); // Send PWM signal to motor B
+    state = 2;
+    Serial.print("State is set to Backwards");
+  } else{
+   // Serial.print("State is Backwards\n");
+  }
 }
 
 void turnAround(void) {
-  digitalWrite(inLeftA, LOW);
-  digitalWrite(inLeftB, HIGH);
-  digitalWrite(inRightA, LOW);
-  digitalWrite(inRightB, HIGH);
   
-  analogWrite(leftWheel, motorSpeed+ motorComp); // Send PWM signal to motor A
-  analogWrite(rightWheel, motorSpeed ); // Send PWM signal to motor B
+  turnLeft();
+  delay(1000);
+  moveStraight();
   
+//  digitalWrite(inLeftA, LOW);
+//  digitalWrite(inLeftB, HIGH);
+//  digitalWrite(inRightA, LOW);
+//  digitalWrite(inRightB, HIGH);
+//  
+//  analogWrite(leftWheel, motorSpeed+ motorComp); // Send PWM signal to motor A
+//  analogWrite(rightWheel, motorSpeed ); // Send PWM signal to motor B
+//  
   Serial.print("Turn Around\n");
 
-  delay(1000);
+ // delay(1000);
 }
 
 void turnLeft(void) {
-  digitalWrite(inLeftA, LOW);
-  digitalWrite(inLeftB, HIGH);
-  digitalWrite(inRightA, LOW);
-  digitalWrite(inRightB, HIGH);
-  
-  analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
-  analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
-  
-  Serial.print("Turn left\n");
+  if(state != 3) {
+    digitalWrite(inLeftA, LOW);
+    digitalWrite(inLeftB, HIGH);
+    digitalWrite(inRightA, LOW);
+    digitalWrite(inRightB, HIGH);
+    
+    analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
+    analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
+    state = 3;
+    Serial.print("State is set to Left\n");
+    
+  } else{ 
+    //Serial.print("State is Left\n");
 
-  delay(500);
+  }
+
 }
 
 void turnRight(void) {
-  digitalWrite(inLeftA, HIGH);
-  digitalWrite(inLeftB, LOW);
-  digitalWrite(inRightA, HIGH);
-  digitalWrite(inRightB, LOW);
+  if(state != 4){
+    digitalWrite(inLeftA, HIGH);
+    digitalWrite(inLeftB, LOW);
+    digitalWrite(inRightA, HIGH);
+    digitalWrite(inRightB, LOW);
+    analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
+    analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
+    state = 4;
+    Serial.print("State is set to Right\n");
+  } else {
+   // Serial.print("State is right\n"); 
+  }
   
-  analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
-  analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
   
-  Serial.print("Turn right\n");
-  
-  delay(500);
 }
 
 
