@@ -80,8 +80,10 @@ void pingDistance(void) {
 
   dur=pulseIn(pingEchoM,HIGH);
   pingMDist = microsecondsToInches(dur);
+  delay(100);
   Serial.print("M-dist: ");
   Serial.println(pingMDist);
+
   /* L */
   delay(200);
   digitalWrite(pingTrigL,LOW);
@@ -92,8 +94,10 @@ void pingDistance(void) {
 
   dur=pulseIn(pingEchoL,HIGH);
   pingLDist = microsecondsToInches(dur);
+  delay(100);
   Serial.print("L-dist: ");
   Serial.println(pingLDist);
+
 
   /* R */
   delay(200);
@@ -105,6 +109,7 @@ void pingDistance(void) {
 
   dur=pulseIn(pingEchoR,HIGH);
   pingRDist = microsecondsToInches(dur);
+  delay(100);
   Serial.print("R-dist: ");
   Serial.println(pingRDist);
 }
