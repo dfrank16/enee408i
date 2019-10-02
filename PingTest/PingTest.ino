@@ -1,19 +1,19 @@
 #define leftWheel 11
-#define inLeftA 9
-#define inLeftB 10
+#define inLeftA 13
+#define inLeftB 12
 
-#define rightWheel 3
-#define inRightA 4
-#define inRightB 5
+#define rightWheel 10
+#define inRightA 8
+#define inRightB 9
 
-const int pingOutM=12;
-const int pingInM=13;
+const int pingOutR=4;
+const int pingInR=5;
 
-const int pingOutL=8;
-const int pingInL=6;
+const int pingOutL=1;
+const int pingInL=2;
 
-const int pingOutR=2;
-const int pingInR=7;
+const int pingOutM=6;
+const int pingInM=7;
 
 int motorComp = 5;
 int motorSpeed = 30;
@@ -41,22 +41,17 @@ void setup() {
 void loop() {
   pingDistance();
 
-  if (pingMDist <= 8) {
-    Serial.print("Close to middle\n");
-    moveBack();
-    delay(1000);
-    turnAround();
-  } else if (pingLDist <= 8) {
-    Serial.print("Close to left\n");
-    turnRight();
-  } else if (pingRDist <= 8) {
-    Serial.print("Close to right\n");
-    turnLeft();
-  } else {
-    moveStraight();
-  }
+  Serial.print("Middle distance is: ");
+  Serial.println(pingMDist);
 
-  delay(100);
+  Serial.print("Right distance is: ");
+  Serial.println(pingRDist);
+
+  Serial.print("Left distance is: ");
+  Serial.println(pingLDist);
+  
+
+  delay(1000);
 }
 
 void pingDistance(void) {
@@ -72,6 +67,7 @@ void pingDistance(void) {
   dur=pulseIn(pingInM,HIGH);
   pingMDist = microsecondsToInches(dur);
 
+  delay(100);
   /* L */
   digitalWrite(pingOutL,LOW);
   delayMicroseconds(2);
@@ -81,9 +77,7 @@ void pingDistance(void) {
 
   dur=pulseIn(pingInL,HIGH);
   pingLDist = microsecondsToInches(dur);
-  Serial.println();
-  Serial.print(pingLDist);
-  Serial.println();
+  delay(100);
 
   /* R */
   digitalWrite(pingOutR,LOW);
@@ -94,6 +88,7 @@ void pingDistance(void) {
 
   dur=pulseIn(pingInR,HIGH);
   pingRDist = microsecondsToInches(dur);
+  delay(100);
 }
 
 void moveStraight(void) {
