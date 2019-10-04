@@ -1,10 +1,11 @@
-#define rightWheel 10
-#define inRightA 8
-#define inRightB 9
 
-#define leftWheel 11
-#define inLeftA 13
-#define inLeftB 12
+#define leftWheel 10
+#define inLeftA 8
+#define inLeftB 9
+//I think that the wheels are backwards
+#define rightWheel 11
+#define inRightA 13
+#define inRightB 12
 
 const int pingEchoM=7;
 const int pingTrigM=6;
@@ -16,11 +17,16 @@ const int pingEchoR=5;
 const int pingTrigR=4;
 
 int motorComp = 6;
-int motorSpeed = 35;
+int motorSpeed = 40;
 
 long pingMDist, pingLDist, pingRDist;
 
-int state = 1;
+//int countL = 0;
+//int countM = 0;
+//int countR = 0;
+//int countS = 0;
+
+int state = 10;
 // 0 -> stopped
 // 1 -> forward
 // 2 -> backward
@@ -43,34 +49,67 @@ void setup() {
   pinMode(pingEchoR,INPUT);
   pinMode(pingTrigR,OUTPUT);
   
-  Serial.begin(19200);
+  Serial.begin(9600);
 }
 
 void loop() {
   pingDistance();
 
- // if (pingMDist <= 8) {
-  //  Serial.print("Close to middle\n");
- //   moveBack();
- //   delay(1000);
- //   turnAround();
- // } else {
-    if (pingLDist <= 15) {
-      turnRight();
+  if (pingMDist <= 20 && pingMDist != 0) {
+//    countM += 1;
+//    if(countM >=3) {      
+         moveBack();
+         //Serial.print("Close to middle\n");
+        delay(1000);
+        turnAround();
+        
+//        countM = 0;
+//        countR = 0;
+//        countL = 0;
+//        countS = 0;
+//    }
+    
+  } else {
+    if (pingLDist <= 20 && pingLDist != 0) {
+//      countL += 1;
+//      if(countL >= 3) {
+         turnRight();
+        
+//        countM = 0;
+//        countR = 0;
+//        countL = 0;
+//        countS = 0;      
+//        }
     }
-    else if(pingRDist <= 15) {
-      turnLeft();
+    else if(pingRDist <= 20 && pingRDist !=0) {
+//      countR += 1;
+//      if(countR >= 3){
+        turnLeft();
+        
+        
+//        countM = 0;
+//        countR = 0;
+//        countL = 0;
+//        countS = 0;
+//        }
     } else {
+//      countS += 1;
+//      if(countS >=3){
+//        countM = 0;
+//        countR = 0;
+//        countL = 0;
+//        countS = 0;
+//      }
     moveStraight();
     }
-  //}
+  }
   
-  delay(200);
 }
 
 void pingDistance(void) {
   long dur;
-  
+    delay(100);
+
   /* M */
   digitalWrite(pingTrigM,LOW);
   delayMicroseconds(2);
@@ -80,12 +119,12 @@ void pingDistance(void) {
 
   dur=pulseIn(pingEchoM,HIGH);
   pingMDist = microsecondsToInches(dur);
-  delay(100);
+  //delay(100);
   Serial.print("M-dist: ");
   Serial.println(pingMDist);
 
   /* L */
-  delay(200);
+  delay(100);
   digitalWrite(pingTrigL,LOW);
   delayMicroseconds(2);
   digitalWrite(pingTrigL,HIGH);
@@ -94,13 +133,13 @@ void pingDistance(void) {
 
   dur=pulseIn(pingEchoL,HIGH);
   pingLDist = microsecondsToInches(dur);
-  delay(100);
+  //delay(100);
   Serial.print("L-dist: ");
   Serial.println(pingLDist);
 
 
   /* R */
-  delay(200);
+  delay(100);
   digitalWrite(pingTrigR,LOW);
   delayMicroseconds(2);
   digitalWrite(pingTrigR,HIGH);
@@ -109,7 +148,7 @@ void pingDistance(void) {
 
   dur=pulseIn(pingEchoR,HIGH);
   pingRDist = microsecondsToInches(dur);
-  delay(100);
+  //delay(100);
   Serial.print("R-dist: ");
   Serial.println(pingRDist);
 }
@@ -133,13 +172,13 @@ void moveStraight(void) {
     digitalWrite(inLeftB, LOW);
     digitalWrite(inRightA, LOW);
     digitalWrite(inRightB, HIGH);
-    analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
+    analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
     analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
     state = 1;
     Serial.print("State is set to Straight\n");
   }
 
-  //Serial.print("State is Straight\n");
+  Serial.print("State is Straight\n");
 }
 
 void moveBack(void) {
@@ -161,7 +200,7 @@ void moveBack(void) {
 void turnAround(void) {
   
   turnLeft();
-  delay(1000);
+  delay(2000);
   moveStraight();
   
 //  digitalWrite(inLeftA, LOW);
@@ -179,18 +218,18 @@ void turnAround(void) {
 
 void turnLeft(void) {
   if(state != 3) {
-    digitalWrite(inLeftA, LOW);
-    digitalWrite(inLeftB, HIGH);
-    digitalWrite(inRightA, LOW);
-    digitalWrite(inRightB, HIGH);
+    digitalWrite(inLeftA, HIGH);
+    digitalWrite(inLeftB, LOW);
+    digitalWrite(inRightA, HIGH);
+    digitalWrite(inRightB, LOW);
     
-    analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
-    analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
+    analogWrite(leftWheel, motorSpeed); // Send PWM signal to motor A
+    analogWrite(rightWheel, motorSpeed + motorComp); // Send PWM signal to motor B
     state = 3;
     Serial.print("State is set to Left\n");
     
   } else{ 
-    //Serial.print("State is Left\n");
+    Serial.print("State is Left\n");
 
   }
 
@@ -198,16 +237,16 @@ void turnLeft(void) {
 
 void turnRight(void) {
   if(state != 4){
-    digitalWrite(inLeftA, HIGH);
-    digitalWrite(inLeftB, LOW);
-    digitalWrite(inRightA, HIGH);
-    digitalWrite(inRightB, LOW);
+    digitalWrite(inLeftA, LOW);
+    digitalWrite(inLeftB, HIGH);
+    digitalWrite(inRightA, LOW);
+    digitalWrite(inRightB, HIGH);
     analogWrite(leftWheel, motorSpeed + motorComp); // Send PWM signal to motor A
     analogWrite(rightWheel, motorSpeed); // Send PWM signal to motor B
     state = 4;
     Serial.print("State is set to Right\n");
   } else {
-   // Serial.print("State is right\n"); 
+    Serial.print("State is right\n"); 
   }
   
   
