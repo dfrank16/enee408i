@@ -1,3 +1,4 @@
+ 
 # USAGE
 # python ball_tracking.py --video ball_tracking_example.mp4
 # python ball_tracking.py
@@ -10,6 +11,11 @@ import argparse
 import cv2
 import imutils
 import time
+import struct
+from flask import Flask, render_template
+#from flask_ask import Ask
+import serial
+arduino = serial.Serial('/dev/ttyACM0', 9600)
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -29,14 +35,15 @@ pts = deque(maxlen=args["buffer"])
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-	vs = VideoStream(src=0).start()
-
+	vs = VideoStream(src=1).start()
+	print("WebCam Capture Successful")
 # otherwise, grab a reference to the video file
 else:
 	vs = cv2.VideoCapture(args["video"])
-
 # allow the camera or video file to warm up
 time.sleep(2.0)
+
+
 
 # keep looping
 while True:
@@ -80,7 +87,7 @@ while True:
 		((x, y), radius) = cv2.minEnclosingCircle(c)
 		M = cv2.moments(c)
 		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-
+		
 		# only proceed if the radius meets a minimum size
 		if radius > 10:
 			# draw the circle and centroid on the frame,
@@ -89,6 +96,19 @@ while True:
 				(0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
+			print(x,y)
+			if x<150:
+				print("Left")
+				arduino.write(struct.pack('>B',1))
+			elif x>410:
+				print("Right")
+				arduino.write(struct.pack('>B',3))
+			elif x>=150 and x <= 410:
+				print("moving forward")
+				arduino.write(struct.pack('>B',2))
+		else:
+			print("halt")
+			arduino.write(struct.pack('>B',4))
 	# update the points queue
 	pts.appendleft(center)
 
