@@ -26,12 +26,16 @@ long pingMDist, pingLDist, pingRDist;
 //int countR = 0;
 //int countS = 0;
 
-int state = 10;
+int state = 0;
 // 0 -> stopped
 // 1 -> forward
 // 2 -> backward
 // 3 -> left
 // 4 -> right
+
+int mode = 0;
+// 1 -> move on ping sensors
+// 0 -> move on camera tracking
 
 
 void setup() {
@@ -51,60 +55,55 @@ void setup() {
   
   Serial.begin(9600);
 }
-
+int incomingByte = 0;
 void loop() {
-  pingDistance();
 
-  if (pingMDist <= 20 && pingMDist != 0) {
-//    countM += 1;
-//    if(countM >=3) {      
+  if (mode) {
+    pingModeMove();
+  } else {
+    camModeMove();
+  }
+
+}
+
+
+void camModeMove(void) {
+  if(Serial.available() > 0) {
+    incomingByte = Serial.read();
+
+    if (incomingByte == 1) {
+      turnLeft();
+    } else if(incomingByte == 3) {
+      turnRight();
+    } else if(incomingByte == 2) {
+      moveStraight();
+    } else if(incomingByte == 4) {
+      moveStop();
+    }
+   incomingByte = 0; 
+  }
+}
+
+
+void pingModeMove(void){
+  pingDistance();
+  if (pingMDist <= 20  && pingMDist != 0) {     
          moveBack();
          //Serial.print("Close to middle\n");
         delay(1000);
         turnAround();
-        
-//        countM = 0;
-//        countR = 0;
-//        countL = 0;
-//        countS = 0;
-//    }
-    
   } else {
-    if (pingLDist <= 20 && pingLDist != 0) {
-//      countL += 1;
-//      if(countL >= 3) {
-         turnRight();
-        
-//        countM = 0;
-//        countR = 0;
-//        countL = 0;
-//        countS = 0;      
-//        }
+    if (pingLDist <= 15 && pingLDist != 0) {
+         turnRight();  
     }
-    else if(pingRDist <= 20 && pingRDist !=0) {
-//      countR += 1;
-//      if(countR >= 3){
+    else if(pingRDist <= 20  && pingRDist !=0) {
         turnLeft();
-        
-        
-//        countM = 0;
-//        countR = 0;
-//        countL = 0;
-//        countS = 0;
-//        }
     } else {
-//      countS += 1;
-//      if(countS >=3){
-//        countM = 0;
-//        countR = 0;
-//        countL = 0;
-//        countS = 0;
-//      }
     moveStraight();
     }
   }
-  
 }
+
 
 void pingDistance(void) {
   long dur;

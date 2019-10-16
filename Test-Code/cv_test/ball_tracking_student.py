@@ -30,28 +30,32 @@ args = vars(ap.parse_args())
 # list of tracked points
 greenLower = (29, 86, 6)
 greenUpper = (64, 255, 255)
-pts = deque(maxlen=args["buffer"])
+#pts = deque(maxlen=args["buffer"])
 
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
 	vs = VideoStream(src=1).start()
-	print("WebCam Capture Successful")
+	#print("WebCam Capture Successful")
+	#vs = cv2.VideoCapture(1)
 # otherwise, grab a reference to the video file
 else:
 	vs = cv2.VideoCapture(args["video"])
+	
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
-
+state = 0
 
 # keep looping
 while True:
+	time.sleep(.175)
+	#arduino.reset_output_buffer()
 	# grab the current frame
 	frame = vs.read()
-
+	#frame = vs.grab()
 	# handle the frame from VideoCapture or VideoStream
-	frame = frame[1] if args.get("video", False) else frame
+	#frame = frame[1]# if args.get("video", False) else frame
 
 	# if we are viewing a video and we did not grab a frame,
 	# then we have reached the end of the video
@@ -85,57 +89,65 @@ while True:
 		# centroid
 		c = max(cnts, key=cv2.contourArea)
 		((x, y), radius) = cv2.minEnclosingCircle(c)
-		M = cv2.moments(c)
-		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+		#M = cv2.moments(c)
+		#center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 		
 		# only proceed if the radius meets a minimum size
 		if radius > 10:
 			# draw the circle and centroid on the frame,
 			# then update the list of tracked points
-			cv2.circle(frame, (int(x), int(y)), int(radius),
-				(0, 255, 255), 2)
-			cv2.circle(frame, center, 5, (0, 0, 255), -1)
+		#	cv2.circle(frame, (int(x), int(y)), int(radius),
+			#	(0, 255, 255), 2)
+		#	cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
 			print(x,y)
 			if x<150:
-				print("Left")
-				arduino.write(struct.pack('>B',1))
+				if state != 1:
+					print("left")
+					arduino.write(struct.pack('>B',1))
+					state = 1
 			elif x>410:
-				print("Right")
-				arduino.write(struct.pack('>B',3))
+				if state !=3:
+					print("right")
+					arduino.write(struct.pack('>B',3))
+					state = 3
 			elif x>=150 and x <= 410:
-				print("moving forward")
-				arduino.write(struct.pack('>B',2))
+				if state != 2:
+					print("forward")
+					state = 2
+					arduino.write(struct.pack('>B',2))
 		else:
-			print("halt")
-			arduino.write(struct.pack('>B',4))
+			if state != 4:
+				print("halt")
+				state = 4
+				arduino.write(struct.pack('>B',4))
 	# update the points queue
-	pts.appendleft(center)
+	#pts.appendleft(center)
 
 	# loop over the set of tracked points
-	for i in range(1, len(pts)):
-		# if either of the tracked points are None, ignore
+#	for i in range(1, len(pts)):
+#		# if either of the tracked points are None, ignore
 		# them
-		if pts[i - 1] is None or pts[i] is None:
-			continue
+#		if pts[i - 1] is None or pts[i] is None:
+#			continue
 
 		# otherwise, compute the thickness of the line and
 		# draw the connecting lines
-		thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
-		cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+#		thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
+#		cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
 	# show the frame to our screen
-	cv2.imshow("Frame", frame)
-	key = cv2.waitKey(1) & 0xFF
+	#cv2.imshow("Frame", frame)
+	#key = cv2.waitKey(1) & 0xFF
 
 	# if the 'q' key is pressed, stop the loop
-	if key == ord("q"):
-		break
+	#if key == ord("q"):
+	#	break
 
 # if we are not using a video file, stop the camera video stream
 if not args.get("video", False):
 	vs.stop()
-
+	#vs.release()
 # otherwise, release the camera
 else:
 	vs.release()
