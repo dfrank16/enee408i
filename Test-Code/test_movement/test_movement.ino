@@ -21,6 +21,7 @@ int motorSpeed = 40;
 int state = 0;
 int pingMode = 0;
 int incomingByte = 0;
+int buf = 0 ;
 
 long pingMDist, pingLDist, pingRDist;
 
@@ -58,12 +59,29 @@ void setup() {
 }
 void loop() {
 
-  if (mode) {
+  /*if (mode) {
     pingModeMove();
   } else {
     camModeMove();
-  }
+  }*/
 
+  incomingByte = Serial.read();
+  if ( buf !=  incomingByte && incomingByte !=-1 ) {
+    buf = incomingByte;
+//  Serial.println(incomingByte);
+    if (incomingByte==1)
+      turnLeft();
+    else if (incomingByte==2)
+      turnRight();
+    else if (incomingByte==3)
+      moveStraight();
+    else if (incomingByte==4)
+      moveBack();
+    /*else if (incomingByte==5)
+      roam();*/
+    else 
+      moveStop();
+   } 
 }
 
 void dualModeMove(void) {

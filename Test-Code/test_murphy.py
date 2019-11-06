@@ -4,7 +4,7 @@ import time
 import serial
 import struct
 
-#ser = serial.Serial('/dev/ttyACM0',9600)
+ser = serial.Serial('/dev/ttyACM0',9600)
 
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -12,27 +12,27 @@ ask = Ask(app, '/')
 
 def halt():
 	valueToWrite= 0
-	#ser.write(struct.pack('>B', valueToWrite))
+	ser.write(struct.pack('>B', valueToWrite))
 
 def left():
 	valueToWrite= 1
-	#ser.write(struct.pack('>B', valueToWrite))
+	ser.write(struct.pack('>B', valueToWrite))
 
 def right():
 	valueToWrite= 2
-	#ser.write(struct.pack('>B', valueToWrite))
+	ser.write(struct.pack('>B', valueToWrite))
 
 def forward():
 	valueToWrite= 3
-	#ser.write(struct.pack('>B', valueToWrite))
+	ser.write(struct.pack('>B', valueToWrite))
 
 def backward():
 	valueToWrite= 4
-	#ser.write(struct.pack('>B', valueToWrite))
+	ser.write(struct.pack('>B', valueToWrite))
 	
 def wander():
 	valueToWrite= 5
-	#ser.write(struct.pack('>B', valueToWrite))
+	ser.write(struct.pack('>B', valueToWrite))
 
 
 
@@ -107,7 +107,7 @@ def default():
 
 @ask.intent('SleepIntent')
 def sleep():
-    # halt()
+    halt()
     print("WE sleepING boiis")
     return statement('Murphy says he is snoring. Bye!')
 
