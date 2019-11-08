@@ -42,36 +42,39 @@ def launched():
         "if you don't need Murphy, please tell him to go to sleep.")
 
 
-@ask.intent('MoveIntent')
-def move(direction):
-    msg = ""
-    if direction == 'left':
-        left()
-        time.sleep(1.0)
-        halt()
-        msg = "Murphy moved left"
-    elif direction == 'right':
-        right()
-        time.sleep(1.0)
-        halt()
-        msg = "Murphy moved right"
-    elif direction == 'forward':
-        forward()
-        time.sleep(4.0)
-        halt()
-        msg = "Murphy moved forward"
-    elif direction == 'backward':
-        backward()
-        time.sleep(2.0)
-        halt()
-        msg = "Murphy moved backward"
-    elif direction == 'halt':
-        halt()
-        msg = "Murphy has stopped moving"
-    elif direction == "move":
-        return question("In what direction?").reprompt("Can you please give a direction?")	
-    return question(msg).reprompt("What would you like Murphy to do now?")
+@ask.intent('ForwardIntent')
+def moveForward():
+	forward()
+	time.sleep(2.0)
+	halt()
+	return question("Murphy moved forward boys.").reprompt("What would you like Murphy to do now?")
 
+@ask.intent('LeftIntent')
+def moveLeft():
+	left()
+	time.sleep(1.5)
+	halt()
+	return question("Murphy slid to the left").reprompt("What would you like Murphy to do now?")
+
+@ask.intent('RightIntent')
+def moveRight():
+	right()
+	time.sleep(1.5)
+	halt()
+	return question("Murphy rides to the right").reprompt("What would you like Murphy to do now?")
+
+@ask.intent('BackIntent')
+def moveBack():
+	backward()
+	time.sleep(2.0)
+	halt()
+	return question("Murphy backs the heck up").reprompt("What would you like Murphy to do now?")
+
+
+@ask.intent('HaltIntent')
+def moveHalt():
+	halt()
+	return question("Murphy has had enough of your crap").reprompt("What would you like Murphy to do now?")
 
 @ask.intent('WanderIntent')
 def wander_command(command):
@@ -88,13 +91,13 @@ def wander_command(command):
 
 @ask.intent('AttackIntent')
 def attack():
-    return question("AHHHHHHHHHHHHHHHHHHH.").reprompt("Murphy has calmed down now. What would you like him to do?")
+    return question("Drop your weapon. You have 10 seconds to comply. Die. Die. Die. Die. Die. Die. Die. Die. Die. Die. Die.").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 
 @ask.intent('RollIntent')
 def rollOver():    
     right()
-    time.sleep(6.0)
+    time.sleep(3.0)
     halt()
     return question("Ayyye! Murphy rolled over.").reprompt("What would you like Murphy to do now?")
 
