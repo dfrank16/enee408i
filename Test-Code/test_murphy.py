@@ -44,43 +44,25 @@ theta_z_add = math.pi/2.0
 theta_z_dec = (3.0)*math.pi/2.0
 
 HEADER_LENGTH = 10
-IP = "192.168.43.193"
+IP = "192.168.43.59"
 PORT = 1234
 my_username = "Murphy"
+print("creating socket")
 # Create a socket
 # socket.AF_INET - address family, IPv4, some otehr possible are AF_INET6, AF_BLUETOOTH, AF_UNIX
-# socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
+#client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect to a given ip and port
-client_socket.connect((IP, PORT))
+#client_socket.connect((IP, PORT))
 # Set connection to non-blocking state, so .recv() call won;t block, just return some exception we'll handle
-client_socket.setblocking(False)
+#client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
-username = my_username.encode('utf-8')
-username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
-client_socket.send(username_header + username)
+#username = my_username.encode('utf-8')
+#username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
+#client_socket.send(username_header + username)
+print("done with socket")
 
-
-
-
-
-
-
-
-playlist = [
-    # 'https://www.freesound.org/data/previews/367/367142_2188-lq.mp3',
-    'https://archive.org/download/mailboxbadgerdrumsamplesvolume2/Ringing.mp3',
-    'https://archive.org/download/petescott20160927/20160927%20RC300-53-127.0bpm.mp3',
-    'https://archive.org/download/plpl011/plpl011_05-johnny_ripper-rain.mp3',
-    'https://archive.org/download/piano_by_maxmsp/beats107.mp3',
-    'https://archive.org/download/petescott20160927/20160927%20RC300-58-115.1bpm.mp3',
-    'https://archive.org/download/PianoScale/PianoScale.mp3',
-    # 'https://archive.org/download/FemaleVoiceSample/Female_VoiceTalent_demo.mp4',
-    'https://archive.org/download/mailboxbadgerdrumsamplesvolume2/Risset%20Drum%201.mp3',
-    'https://archive.org/download/mailboxbadgerdrumsamplesvolume2/Submarine.mp3',
-    # 'https://ia800203.us.archive.org/27/items/CarelessWhisper_435/CarelessWhisper.ogg'
-]
 
 
 def halt():
@@ -110,113 +92,10 @@ def wander():
 def start_app():
     app.run(debug=True)
 
-class QueueManager(object):
-    """Manages queue data in a seperate context from current_stream.
-    The flask-ask Local current_stream refers only to the current data from Alexa requests and Skill Responses.
-    Alexa Skills Kit does not provide enqueued or stream-histroy data and does not provide a session attribute
-    when delivering AudioPlayer Requests.
-    This class is used to maintain accurate control of multiple streams,
-    so that the user may send Intents to move throughout a queue.
-    """
-
-    def __init__(self, urls):
-        self._urls = urls
-        self._queued = collections.deque(urls)
-        self._history = collections.deque()
-        self._current = None
-
-    @property
-    def status(self):
-        status = {
-            'Current Position': self.current_position,
-            'Current URL': self.current,
-            'Next URL': self.up_next,
-            'Previous': self.previous,
-            'History': list(self.history)
-        }
-        return status
-
-    @property
-    def up_next(self):
-        """Returns the url at the front of the queue"""
-        qcopy = copy(self._queued)
-        try:
-            return qcopy.popleft()
-        except IndexError:
-            return None
-
-    @property
-    def current(self):
-        return self._current
-
-    @current.setter
-    def current(self, url):
-        self._save_to_history()
-        self._current = url
-
-    @property
-    def history(self):
-        return self._history
-
-    @property
-    def previous(self):
-        history = copy(self.history)
-        try:
-            return history.pop()
-        except IndexError:
-            return None
-
-    def add(self, url):
-        self._urls.append(url)
-        self._queued.append(url)
-
-    def extend(self, urls):
-        self._urls.extend(urls)
-        self._queued.extend(urls)
-
-    def _save_to_history(self):
-        if self._current:
-            self._history.append(self._current)
-
-    def end_current(self):
-        self._save_to_history()
-        self._current = None
-
-    def step(self):
-        self.end_current()
-        self._current = self._queued.popleft()
-        return self._current
-
-    def step_back(self):
-        self._queued.appendleft(self._current)
-        self._current = self._history.pop()
-        return self._current
-
-    def reset(self):
-        self._queued = collections.deque(self._urls)
-        self._history = []
-
-    def start(self):
-        self.__init__(self._urls)
-        return self.step()
-
-    @property
-    def current_position(self):
-        return len(self._history) + 1
-
-queue = QueueManager(playlist)
-
 @ask.launch
 def launched():
     return question("Hello. what would you like Murphy to do?").reprompt(
         "if you don't need Murphy, please tell him to go to sleep.")
-
-@ask.intent('PlayMusicIntent')
-def playMusic():
-    speech = 'Heres a playlist of some sounds. You can ask me Next, Previous, or Start Over'
-    stream_url = queue.start()
-    return audio(speech).play(stream_url)
-
 
 @ask.intent('ForwardIntent')
 def moveForward():
@@ -250,7 +129,7 @@ def moveBack():
 @ask.intent('HaltIntent')
 def moveHalt():
 	halt()
-	return question("Murphy has had enough of your crap").reprompt("What would you like Murphy to do now?")
+	return question("Murphy has had enough of your hecking crap").reprompt("What would you like Murphy to do now?")
 
 @ask.intent('WanderIntent')
 def wander_command(command):
@@ -259,7 +138,7 @@ def wander_command(command):
         return question("Murphy is wandering.").reprompt("Encourage Murphy to keep wandering or tell him to stop wandering.")
     if (command == 'keep'):
         wander()
-        return question("woof.").reprompt("Encourage Murphy to keep wandering or tell him to stop wandering.")
+        return question("Woof. Woof").reprompt("Encourage Murphy to keep wandering or tell him to stop wandering.")
     else:
         halt()
         return question("Murphy has stopped wandering.").reprompt("what would you like Murphy to do now?")
@@ -267,7 +146,7 @@ def wander_command(command):
 
 @ask.intent('AttackIntent')
 def attack():
-    return question("Drop your weapon. You have 10 seconds to comply. Die. Die. Die. Die. Die. Die. Die. Die. Die. Die. Die.").reprompt("Murphy has calmed down now. What would you like him to do?")
+    return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 
 @ask.intent('RollIntent')
@@ -307,7 +186,7 @@ def send(message):
     if message:
         # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
         message = message.encode('utf-8')
-        message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+        message_header = ("{}:<{}".format(len(message),HEADER_LENGTH)).encode('utf-8')
         client_socket.send(message_header + message)
         return statement('Location Sent')
 
@@ -343,7 +222,7 @@ def receive():
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
                 # Print message
-                print(f'\n{username} > {message}')
+                print('\n{} > {}'.format(username,message))
                 print(my_username + ' > ')
                 if(message[0] == 'd'):
                     print("splitting")
@@ -407,30 +286,7 @@ def findDistress():
     return
 
 
-while(waiting):
-    if state == 0:
-        # Wander
-        # arduino.write(struct.pack('>B', 9))
-        t2 = threading.Thread(target=receive, name='t2')
-        t2.start()
-        time.sleep(0.175)
-    elif state == 1:
-        print("State 1")
-        state =2
-        pass
-    else:
-        t2.join()
-        print("halt")
-        #Change this to be the location we grab from the april tags
-        message = "received distress at: " + str(goal_x) + "," + str(goal_z)
-        t1 = threading.Thread(target=send, name='t1', args=(message,))
-        t1.start()
-        state = 2
-        waiting = False
-        t1.join()
-        # arduino.write(struct.pack('>B',4))
-
-#t_app = threading.Thread(target=start_app, name='t_app')
 
 if __name__ == '__main__':
-    start_app()
+	print("starting app")
+	start_app()
