@@ -97,6 +97,12 @@ def launched():
     return question("Hello. what would you like Murphy to do?").reprompt(
         "if you don't need Murphy, please tell him to go to sleep.")
 
+@ask.intent('PlayMusicIntent')
+def playMusic():
+    speech = "Here's one of my favorites"
+    stream_url = 'https://www.vintagecomputermusic.com/mp3/s2t9_Computer_Speech_Demonstration.mp3'
+    return audio(speech).play(stream_url)
+
 @ask.intent('ForwardIntent')
 def moveForward():
 	forward()
