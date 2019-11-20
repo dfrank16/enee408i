@@ -16,7 +16,7 @@ import threading
 import math
 
 
-# ser = serial.Serial('/dev/ttyACM0',9600)
+ser = serial.Serial('/dev/ttyACM0',9600)
 
 waiting = True
 app = Flask(__name__)
@@ -38,10 +38,10 @@ curr_z = 0.0
 curr_heading = 0.0
 heading_offset = math.pi/6.0
 goal_offset = 0.5
-theta_x_add = 0.0
-theta_x_dec = math.pi
-theta_z_add = math.pi/2.0
-theta_z_dec = (3.0)*math.pi/2.0
+z_pos = 0.0
+z_neg = 180.0
+x_pos = 90.0
+x_neg = -90.0
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
@@ -58,8 +58,8 @@ print("creating socket")
 #client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
-#username = my_username.encode('utf-8')
-#username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
+username = my_username.encode('utf-8')
+username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
 #client_socket.send(username_header + username)
 print("done with socket")
 
@@ -269,10 +269,23 @@ def send(message):
     # If message is not empty - send it
     if message:
         # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
-        message = message.encode('utf-8')
-        message_header = ("{}:<{}".format(len(message),HEADER_LENGTH)).encode('utf-8')
-        client_socket.send(message_header + message)
-        return statement('Location Sent')
+        print( "connection lost... reconnecting" )  
+        connected = False    
+        # recreate socket  
+        client_socket = socket.socket()    
+        while not connected:      
+            # attempt to reconnect, otherwise sleep for 2 seconds      
+            try:          
+                client_socket.connect( (IP, PORT) )
+                client_socket.setblocking(False)          
+                connected = True          
+                print( "re-connection successful" )
+                message = message.encode('utf-8')
+                message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+                client_socket.send(message_header + message)      
+            except socket.error:          
+                time.sleep( 2 ) 
+        return
 
 @ask.intent('ReceiveIntent')
 def receiveIntent():
@@ -292,6 +305,9 @@ def receive():
            # Now we want to loop over received messages (there might be more than one) and print them
             while True:
                 # Receive our "header" containing username length, it's size is defined and constant
+                client_socket = socket.socket()
+                client_socket.connect((IP, PORT))
+                client_socket.setblocking(False)
                 username_header = client_socket.recv(HEADER_LENGTH)
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
                 if not len(username_header):
@@ -306,7 +322,7 @@ def receive():
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
                 # Print message
-                print('\n{} > {}'.format(username,message))
+                print(f'\n{username} > {message}')
                 print(my_username + ' > ')
                 if(message[0] == 'd'):
                     print("splitting")
@@ -316,7 +332,7 @@ def receive():
                     goal_z = float(m[1])
                     state = 1
                     receiving = False
-                    return 
+                    return
 
         except IOError as e:
             # This is normal on non blocking connections - when there are no incoming data error is going to be raised
@@ -325,44 +341,51 @@ def receive():
             # If we got different error code - something happened
             if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
                 print('Reading error: {}'.format(str(e)))
-                return statement('Nothing Received')
+                sys.exit()
             # We just did not receive anything
             continue
         except Exception as e:
-            # Any other exception - something happened, exit
-            print('Reading error: {}'.format(str(e)))
-            return statement('Unexpected Error')
+            print( "connection lost... reconnecting" )  
+            connected = False    
+            # recreate socket  
+            client_socket = socket.socket()    
+            while not connected:      
+            # attempt to reconnect, otherwise sleep for 2 seconds      
+                try:          
+                    client_socket.connect( (IP, PORT) )
+                    client_socket.setblocking(False)          
+                    connected = True          
+                    print( "re-connection successful" )      
+                except socket.error:          
+                    time.sleep( 2 )  
+
 
 
 def findDistress():
     wander()
     while(not waiting):
         time.sleep(0.5)
-    if goal_x > curr_x:
-        while(abs(curr_heading-theta_x_add) > heading_offset):
-            right()
-            time.sleep(0.15)
-            halt()
-    else:
-        while(abs(curr_heading-theta_x_dec) > heading_offset):
-            right()
-            time.sleep(0.15)
-            halt()
-    while(abs(curr_x-goal_x) > goal_offset):
-        forward()
+    goal_theta = z_pos
+    while(abs(curr_heading-goal_theta) > heading_offset):
+        right()
         time.sleep(0.15)
         halt()
-    if goal_z > curr_z:
-        while(abs(curr_heading-theta_z_add) > heading_offset):
-            right()
+    if curr_z > goal_z:
+        while(abs(curr_z-goal_z) > goal_offset):
+            forward()
             time.sleep(0.15)
             halt()
     else:
-        while(abs(curr_heading-theta_z_dec) > heading_offset):
-            right()
+        while(abs(curr_z-goal_z) > goal_offset):
+            backward()
             time.sleep(0.15)
             halt()
-    while(abs(curr_z-goal_z) > goal_offset):
+    goal_theta = x_pos if goal_x > curr_x else x_neg
+    while(abs(curr_heading-goal_theta) > heading_offset):
+        right()
+        time.sleep(0.15)
+        halt()
+    while(abs(curr_x-goal_x) > goal_offset):
         forward()
         time.sleep(0.15)
         halt()
