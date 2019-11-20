@@ -64,7 +64,6 @@ print("creating socket")
 print("done with socket")
 
 
-
 def halt():
 	valueToWrite= 0
 	ser.write(struct.pack('>B', valueToWrite))
@@ -102,6 +101,85 @@ def playMusic():
     speech = "Here's one of my favorites"
     stream_url = 'https://www.vintagecomputermusic.com/mp3/s2t9_Computer_Speech_Demonstration.mp3'
     return audio(speech).play(stream_url)
+
+@ask.intent('StopSoundIntent')
+def stopSound():
+    speech = "Oopsie daisy. I'm sorry master"
+    return audio(speech).stop()
+
+@ask.intent('LifeAlertIntent')
+def lifeAlert():
+    speech = ""
+    stream_url = './LifeAlert.mp3'
+    return audio(speech).play(stream_url)
+
+@ask.intent('RandyOrtonIntent')
+def randyOrton():
+    speech = ""
+    stream_url = './WatchOutWatchOut.mp3'
+    return audio(speech).play(stream_url)
+
+@ask.intent('JohnCenaIntent')
+def johnCena():
+    speech = ""
+    stream_url = './AndHisNameIsJohnCena.mp3'
+    return audio(speech).play(stream_url)
+
+@ask.intent('YeetIntent')
+def yeet():
+    speech = ""
+    stream_url = './Yeet.mp3'
+    return audio(speech).play(stream_url)
+
+@ask.intent('AhhhIntent')
+def ahhh():
+    speech = ""
+    stream_url = './Ahhh.mp3'
+    return audio(speech).play(stream_url)
+
+@ask.intent('CPRIntent')
+def cpr():
+    speech = ""
+    stream_url = './StayingAlive.mp3'
+    return audio(speech).play(stream_url, offset=1000)
+
+@ask.intent('PirateMusicIntent')
+def pirateMusic():
+    speech = ""
+    stream_url = './PirateMusic.mp3'
+    return audio(speech).play(stream_url)
+
+@ask.intent('MoveIntent')
+def move(direction):
+    msg = ""
+    if direction == 'left':
+        left()
+        time.sleep(1.5)
+        halt()
+        msg = "Murphy slid to the left"
+    elif direction == 'right':
+        right()
+        time.sleep(1.5)
+        halt()
+        msg = "Murphy rides to the rightt"
+    elif direction == 'forward':
+        forward()
+        time.sleep(2.0)
+        halt()  
+        msg = "Murphy moved forward boys."
+    elif direction == 'backward':
+        backward()
+        time.sleep(2.0)
+        halt()
+        msg = "Murphy backs the heck up"
+    elif direction == 'halt':
+        halt()
+        msg = "Murphy has had enough of your hecking crap"
+    elif direction == "move":
+        return question("In what direction?").reprompt("Can you please give a fooking direction?")	
+    return question(msg).reprompt("What would you like Murphy to do now?")
+
+
 
 @ask.intent('ForwardIntent')
 def moveForward():
