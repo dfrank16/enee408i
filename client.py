@@ -24,6 +24,7 @@ client_socket.setblocking(False)
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
 username = my_username.encode('utf-8')
 username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
+print(username_header)
 client_socket.send(username_header + username)
 
 def send():

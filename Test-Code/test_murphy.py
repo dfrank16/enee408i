@@ -16,7 +16,7 @@ import threading
 import math
 
 
-ser = serial.Serial('/dev/ttyACM0',9600)
+# ser = serial.Serial('/dev/ttyACM0',9600)
 
 waiting = True
 app = Flask(__name__)
