@@ -9,6 +9,13 @@ IP = "192.168.43.21"
 PORT = 1234
 my_username = input("Username: ")
 
+def create_header(strLen, headLen):
+    result = "{}".format(strLen)
+    resultLen = len(result)
+    if resultLen < headLen:
+        for x in range(headLen - resultLen) :
+            result = result + " "
+    return result
 # Create a socket
 # socket.AF_INET - address family, IPv4, some otehr possible are AF_INET6, AF_BLUETOOTH, AF_UNIX
 # socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
@@ -23,23 +30,22 @@ client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
 username = my_username.encode('utf-8')
-username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
-print(username_header)
-client_socket.send(username_header + username)
+username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+client_socket.sendall(username_header + username)
 
 def send():
     while True:
 
         # Wait for user to input a message
-        message = input(f'{my_username} > ')
+        message = input('{} > '.format(my_username))
 
         # If message is not empty - send it
         if message:
 
             # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
             message = message.encode('utf-8')
-            message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
-            client_socket.send(message_header + message)
+            message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
+            client_socket.sendall(message_header + message)
 
 
 
@@ -70,7 +76,7 @@ def receive():
                 message = client_socket.recv(message_length).decode('utf-8')
 
                 # Print message
-                print(f'\n{username} > {message}')
+                print('\n{} > {}'.format(username, message))
                 #print(my_username + ' > ')
 
         except IOError as e:

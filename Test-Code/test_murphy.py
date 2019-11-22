@@ -28,7 +28,7 @@ app = Flask(__name__)
 ask = Ask(app, '/')
 logging.getLogger('flask_ask').setLevel(logging.INFO)
 
- 
+
 # USAGE
 # python ball_tracking.py --video ball_tracking_example.mp4
 # python ball_tracking.py
@@ -58,14 +58,23 @@ print("creating socket")
 #socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
 #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect to a given ip and port
-#client_socket.connect((IP, PORT))
+client_socket.connect((IP, PORT))
 # Set connection to non-blocking state, so .recv() call won;t block, just return some exception we'll handle
-#client_socket.setblocking(False)
+client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
+
+def create_header(strLen, headLen):
+    result = "{}".format(strLen)
+    resultLen = len(result)
+    if resultLen < headLen:
+        for x in range(headLen - resultLen) :
+            result = result + " "
+    return result
+
 username = my_username.encode('utf-8')
-username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
-#client_socket.send(username_header + username)
+username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+client_socket.sendall(username_header + username)
 print("done with socket")
 
 
@@ -225,7 +234,7 @@ def move(direction):
     elif direction == 'forward':
         forward()
         time.sleep(2.0)
-        halt()  
+        halt()
         msg = "Murphy moved forward boys."
     elif direction == 'backward':
         backward()
@@ -236,7 +245,7 @@ def move(direction):
         halt()
         msg = "Murphy has had enough of your hecking crap"
     elif direction == "move":
-        return question("In what direction?").reprompt("Can you please give a fooking direction?")	
+        return question("In what direction?").reprompt("Can you please give a fooking direction?")
     return question(msg).reprompt("What would you like Murphy to do now?")
 
 
@@ -303,10 +312,10 @@ def stayHandler():
 	global followFlag
 	followFlag = 0
 	halt()
-	
+
 
 @ask.intent('RollIntent')
-def rollOver():    
+def rollOver():
     right()
     time.sleep(3.0)
     halt()
@@ -341,22 +350,22 @@ def send(message):
     # If message is not empty - send it
     if message:
         # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
-        print( "connection lost... reconnecting" )  
-        connected = False    
-        # recreate socket  
-        client_socket = socket.socket()    
-        while not connected:      
-            # attempt to reconnect, otherwise sleep for 2 seconds      
-            try:          
+        print( "connection lost... reconnecting" )
+        connected = False
+        # recreate socket
+        client_socket = socket.socket()
+        while not connected:
+            # attempt to reconnect, otherwise sleep for 2 seconds
+            try:
                 client_socket.connect( (IP, PORT) )
-                client_socket.setblocking(False)          
-                connected = True          
+                client_socket.setblocking(False)
+                connected = True
                 print( "re-connection successful" )
                 message = message.encode('utf-8')
-                message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
-                client_socket.send(message_header + message)      
-            except socket.error:          
-                time.sleep( 2 ) 
+                message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
+                client_socket.sendall(message_header + message)    
+            except socket.error:
+                time.sleep( 2 )
         return
 
 @ask.intent('ReceiveIntent')
@@ -394,7 +403,7 @@ def receive():
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
                 # Print message
-                print(f'\n{username} > {message}')
+                print('\n{} > {}'.format(username, message))
                 print(my_username + ' > ')
                 if(message[0] == 'd'):
                     print("splitting")
@@ -417,19 +426,19 @@ def receive():
             # We just did not receive anything
             continue
         except Exception as e:
-            print( "connection lost... reconnecting" )  
-            connected = False    
-            # recreate socket  
-            client_socket = socket.socket()    
-            while not connected:      
-            # attempt to reconnect, otherwise sleep for 2 seconds      
-                try:          
+            print( "connection lost... reconnecting" )
+            connected = False
+            # recreate socket
+            client_socket = socket.socket()
+            while not connected:
+            # attempt to reconnect, otherwise sleep for 2 seconds
+                try:
                     client_socket.connect( (IP, PORT) )
-                    client_socket.setblocking(False)          
-                    connected = True          
-                    print( "re-connection successful" )      
-                except socket.error:          
-                    time.sleep( 2 )  
+                    client_socket.setblocking(False)
+                    connected = True
+                    print( "re-connection successful" )
+                except socket.error:
+                    time.sleep( 2 )
 
 
 
