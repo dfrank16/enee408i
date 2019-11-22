@@ -496,6 +496,7 @@ def followPerson():
 	vs.release()
 	halt()
 
+
 if __name__ == '__main__':
 	print("starting app")
 	start_app()
