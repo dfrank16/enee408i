@@ -176,7 +176,7 @@ def wander():
                 except:
                         arduino_write_fail()
 
-def start_app():
+def start_app(app):
     app.run(debug=True)
 
 @ask.launch
@@ -542,14 +542,6 @@ camthread.start()
 while frame is None:
 	time.sleep(0.5)	
 print("starting app")
-murphythread = threading.Thread(target=start_app, name = 'murphythread')
+murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
+murphythread.setDaemon(True)
 murphythread.start()
-
-
-
-
-
-
-
-
-
