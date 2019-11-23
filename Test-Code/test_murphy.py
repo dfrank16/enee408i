@@ -129,7 +129,6 @@ def arduino_write_fail():
 drive_state = 0
 def halt():
         global drive_state
-        global stop
         if drive_state != 0:
                 try:
                         ser.write(struct.pack('>B', 0))
@@ -283,6 +282,7 @@ def stayHandler():
 	global followFlag
 	followFlag = 0
 	halt()
+    stop = True
 	return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
@@ -441,48 +441,55 @@ def goto(goal_x, goal_z):
     global curr_z
     global curr_x
     global stop
+    sleep_time = 0.05
     goal_theta = z_pos
     stop = False
     while(abs(curr_heading-goal_theta) > heading_offset and not stop):
         print("finding z")
         right()
-        time.sleep(0.5)
+        time.sleep(sleep_time)
         get_position()
+        time.sleep(sleep_time)
         halt()
     if curr_z > goal_z and not stop:
         while(curr_z-goal_z > goal_offset and not stop):
             print("driving to z")
             forward()
-            time.sleep(0.5)
+            time.sleep(sleep_time)
             get_position()
+            time.sleep(sleep_time)
             halt()
     else:
         while(goal_z-curr_z > goal_offset and not stop):
             print("driving to z")
             backward()
-            time.sleep(0.5)
+            time.sleep(sleep_time)
             get_position()
+            time.sleep(sleep_time)
             halt()
     goal_theta = x_pos if goal_x > curr_x else x_neg
     while(abs(curr_heading-goal_theta) > heading_offset and not stop):
         print("finding x")
         right()
-        time.sleep(0.5)
+        time.sleep(sleep_time)
         get_position()
+        time.sleep(sleep_time)
         halt()
     if curr_x > goal_x:
         while(curr_x-goal_x > goal_offset and not stop):
             print("driving to x")
             forward()
-            time.sleep(0.5)
+            time.sleep(sleep_time)
             get_position()
+            time.sleep(sleep_time)
             halt()
     else:
         while(goal_x-curr_x > goal_offset and not stop):
             print("driving to x")
             forward()
-            time.sleep(0.5)
-            get_position()
+            time.sleep(sleep_time)
+            get_position() 
+            time.sleep(sleep_time)
             halt()
     
     halt()
