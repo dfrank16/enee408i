@@ -479,9 +479,9 @@ def followPerson():
 			if tag.tag_id == 50:
 				found = 1
 				break		
-		if found:	
-			center = tag.center
-			x = center[0]
+        if found:	
+            center = tag.center
+            x = center[0]
             retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
             rot_matrix, _ = cv2.Rodrigues(rvec)
             R = rot_matrix.transpose()
@@ -519,7 +519,8 @@ def get_position():
     yaw_bar = 0.0
     x_bar = 0.0
     y_bar = 0.0
-    for tag in atags:	
+    atags = [a in atags if a.tag_id != 50]
+    for tag in atags :	
         corners = tag.corners
         corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
         tag_id = tag.tag_id
