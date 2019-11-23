@@ -77,16 +77,16 @@ def create_header(strLen, headLen):
 frame = None
 
 def start_camera():
-	global frame
-	vs = VideoStream(src=1).start()
-        time.sleep(2.0)
-        detector = apriltag.Detector()
-        # keep looping
-        while True:
-                time.sleep(.1)
-                temp_frame = vs.read()
-                temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		frame = temp_frame
+    global frame
+    vs = VideoStream(src=1).start()
+    time.sleep(2.0)
+    detector = apriltag.Detector()
+    # keep looping
+    while True:
+        time.sleep(.1)
+        temp_frame = vs.read()
+        temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = temp_frame
 
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
@@ -470,11 +470,11 @@ def followPerson():
 	while followFlag:
 		time.sleep(.1)
 		atags = detector.detect(frame)
-		temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+		temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
 		found = 0
 		for tag in atags:
 			corners = tag.corners
-			corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
+			corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
 			tag_id = tag.tag_id
 			if tag.tag_id == 50:
 				found = 1
@@ -482,6 +482,10 @@ def followPerson():
 		if found:	
 			center = tag.center
 			x = center[0]
+            retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+            rot_matrix, _ = cv2.Rodrigues(rvec)
+            R = rot_matrix.transpose()
+            pose = -R @ tvec
 			if  pose[0] > 10.0:
 				if x<150:
 					left()
