@@ -17,7 +17,7 @@ const int pingEchoR = 5;
 const int pingTrigR = 4;
 
 int motorComp = 6;
-int motorSpeed = 40;
+int motorSpeed = 30;
 int state = 0;
 int pingMode = 0;
 int incomingByte = 0;
