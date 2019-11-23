@@ -47,6 +47,7 @@ z_pos = 0.0
 z_neg = 180.0
 x_pos = 90.0
 x_neg = -90.0
+frame = None
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
@@ -451,37 +452,37 @@ def goto(goal_x, goal_z):
     while(abs(curr_heading-goal_theta) > heading_offset):
         right()
         time.sleep(0.15)
-        getposition()
+        get_position()
         halt()
     if curr_z > goal_z:
         while(curr_z-goal_z > goal_offset):
             forward()
             time.sleep(0.15)
-            getposition()
+            get_position()
             halt()
     else:
         while(goal_z-curr_z > goal_offset):
             backward()
             time.sleep(0.15)
-            getposition()
+            get_position()
             halt()
     goal_theta = x_pos if goal_x > curr_x else x_neg
     while(abs(curr_heading-goal_theta) > heading_offset):
         right()
         time.sleep(0.15)
-        getposition()
+        get_position()
         halt()
     if curr_x > goal_x:
         while(curr_x-goal_x > goal_offset):
             forward()
             time.sleep(0.15)
-            getposition()
+            get_position()
             halt()
     else:
         while(goal_x-curr_x > goal_offset):
             forward()
             time.sleep(0.15)
-            getposition()
+            get_position()
             halt()
     
     halt()
@@ -523,6 +524,39 @@ def followPerson():
 					halt()
 	vs.release()
 	halt()
+
+
+
+def get_position():
+    global frame
+    global curr_x
+    global curr_z
+    global curr_heading
+    atags = detector.detect(frame)	
+#	print(atag)
+    temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+    yaw_bar = 0.0
+    x_bar = 0.0
+    y_bar = 0.0
+    for tag in atags:	
+        corners = tag.corners
+        corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
+        tag_id = tag.tag_id
+        retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+        rot_matrix, _ = cv2.Rodrigues(rvec)
+        R = rot_matrix.transpose()
+        pose = -R @ tvec
+        x_bar += pose[0]
+        z_bar += pose[2]
+        yaw, pitch, roll = get_orientation(camera_matrix, R, tvec)
+        yaw_bar += yaw
+		#print("Yaw: {} \n Pitch: {} \n Roll: {}".format(yaw,pitch,roll))
+    curr_heading = yaw_bar/len(atags)
+    curr_x = x_bar/len(atags)
+    curr_z = z_bar/len(atags)
+
+		
+
 
 if __name__ == '__main__':
 	print("starting app")
