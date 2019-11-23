@@ -356,6 +356,7 @@ def receive():
     global goal_x
     global goal_z
     receiving = True
+    print("Receiving")
     while receiving:
         try:
            # Now we want to loop over received messages (there might be more than one) and print them
@@ -462,6 +463,7 @@ def goto(goal_x, goal_z):
     halt()
 def findDistress():
     wander()
+    print(waiting)
     while(not waiting):
         time.sleep(0.5)
     goto(goal_x, goal_z)
@@ -537,9 +539,15 @@ def get_position():
         yaw, pitch, roll = get_orientation(camera_matrix, R, tvec)
         yaw_bar += yaw
 		#print("Yaw: {} \n Pitch: {} \n Roll: {}".format(yaw,pitch,roll))
-    curr_heading = yaw_bar/len(atags)
-    curr_x = x_bar/len(atags)
-    curr_z = z_bar/len(atags)
+    if len(atags) > 1:
+        curr_heading = yaw_bar/len(atags)
+        curr_x = x_bar/len(atags)
+        curr_z = z_bar/len(atags)
+    else:
+        curr_heading = yaw_bar
+        curr_x = x_bar
+        curr_z = z_bar
+
 
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
