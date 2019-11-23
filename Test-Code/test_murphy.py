@@ -14,22 +14,27 @@ import sys
 import errno
 import threading
 import math
+from math import atan2, asin
+from imutils.video import VideoStream
+import apriltag
+import cv2
+import imutils
 
 
 ser = serial.Serial('/dev/ttyACM0',9600)
-
+ser.timeout = 1.0
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
 logging.getLogger('flask_ask').setLevel(logging.INFO)
 
- 
+
 # USAGE
 # python ball_tracking.py --video ball_tracking_example.mp4
 # python ball_tracking.py
 
 # import the necessary packages
-
+followFlag = 0
 state = 0
 goal_x = 0.0
 goal_z = 0.0
@@ -53,40 +58,104 @@ print("creating socket")
 #socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
 #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect to a given ip and port
-#client_socket.connect((IP, PORT))
+client_socket.connect((IP, PORT))
 # Set connection to non-blocking state, so .recv() call won;t block, just return some exception we'll handle
-#client_socket.setblocking(False)
+client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
+
+def create_header(strLen, headLen):
+    result = "{}".format(strLen)
+    resultLen = len(result)
+    if resultLen < headLen:
+        for x in range(headLen - resultLen) :
+            result = result + " "
+    return result
+
 username = my_username.encode('utf-8')
-username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
-#client_socket.send(username_header + username)
+username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+client_socket.sendall(username_header + username)
 print("done with socket")
 
 
+camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
+
+camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
+
+camera_distortions = numpy.array(camera_distortions)
+camera_matrix = numpy.array(camera_matrix)
+
+
+# Load world points
+world_points = {}
+with open('worldPoints.json', 'r') as f:
+        data = json.load(f)
+for k,v in data.items():
+        world_points[int(k)] = numpy.array(v, dtype=numpy.float32).reshape((4,3,1))
+
+def get_orientation(camera_matrix, R, t):
+        proj = camera_matrix.dot(numpy.hstack((R, t)))
+        rot = cv2.decomposeProjectionMatrix(proj)
+        rot = rot[-1]
+        return rot[1], rot[2], rot[0]
+
+
+def arduino_write_fail():
+        print("Serial write to arduino timed out. Resetting connection")
+        ser.close()
+        ser.open()
+drive_state = 0
 def halt():
-	valueToWrite= 0
-	ser.write(struct.pack('>B', valueToWrite))
+        global drive_state
+        if drive_state != 0:
+                try:
+                        ser.write(struct.pack('>B', 0))
+                        drive_state = 0
+                except:
+                        arduino_write_fail()
 
 def left():
-	valueToWrite= 1
-	ser.write(struct.pack('>B', valueToWrite))
-
+        global drive_state
+        if drive_state != 1:
+                try:
+                        ser.write(struct.pack('>B', 1))
+                        drive_state = 1
+                except:
+                        arduino_write_fail()
 def right():
-	valueToWrite= 2
-	ser.write(struct.pack('>B', valueToWrite))
-
+        global drive_state
+        if drive_state != 2:
+                try:
+                        ser.write(struct.pack('>B', 2))
+                        drive_state = 2
+                except:
+                        arduino_write_fail()
 def forward():
-	valueToWrite= 3
-	ser.write(struct.pack('>B', valueToWrite))
-
+        global drive_state
+        if drive_state != 3:
+                try:
+                        ser.write(struct.pack('>B', 3))
+                        drive_state = 3
+                except:
+                        arduino_write_fail()
 def backward():
-	valueToWrite= 4
-	ser.write(struct.pack('>B', valueToWrite))
-	
+        global drive_state
+        if drive_state != 4:
+                try:
+                        ser.write(struct.pack('>B', 4))
+                        drive_state = 4
+                except:
+                        arduino_write_fail()
 def wander():
-	valueToWrite= 5
-	ser.write(struct.pack('>B', valueToWrite))
+        global drive_state
+        if drive_state != 5:
+                try:
+                        ser.write(struct.pack('>B', 5))
+                        drive_state = 5
+                except:
+                        arduino_write_fail()
+
+
 
 def start_app():
     app.run(debug=True)
@@ -165,7 +234,7 @@ def move(direction):
     elif direction == 'forward':
         forward()
         time.sleep(2.0)
-        halt()  
+        halt()
         msg = "Murphy moved forward boys."
     elif direction == 'backward':
         backward()
@@ -176,7 +245,7 @@ def move(direction):
         halt()
         msg = "Murphy has had enough of your hecking crap"
     elif direction == "move":
-        return question("In what direction?").reprompt("Can you please give a fooking direction?")	
+        return question("In what direction?").reprompt("Can you please give a fooking direction?")
     return question(msg).reprompt("What would you like Murphy to do now?")
 
 
@@ -232,9 +301,21 @@ def wander_command(command):
 def attack():
     return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
 
+@ask.intent('FollowMeIntent')
+def followMeHandler():
+	global followFlag
+	followFlag = 1
+	thread.start_new_thread(followPerson, ())
+
+@ask.intent('StayIntent')
+def stayHandler():
+	global followFlag
+	followFlag = 0
+	halt()
+
 
 @ask.intent('RollIntent')
-def rollOver():    
+def rollOver():
     right()
     time.sleep(3.0)
     halt()
@@ -269,22 +350,22 @@ def send(message):
     # If message is not empty - send it
     if message:
         # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
-        print( "connection lost... reconnecting" )  
-        connected = False    
-        # recreate socket  
-        client_socket = socket.socket()    
-        while not connected:      
-            # attempt to reconnect, otherwise sleep for 2 seconds      
-            try:          
+        print( "connection lost... reconnecting" )
+        connected = False
+        # recreate socket
+        client_socket = socket.socket()
+        while not connected:
+            # attempt to reconnect, otherwise sleep for 2 seconds
+            try:
                 client_socket.connect( (IP, PORT) )
-                client_socket.setblocking(False)          
-                connected = True          
+                client_socket.setblocking(False)
+                connected = True
                 print( "re-connection successful" )
                 message = message.encode('utf-8')
-                message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
-                client_socket.send(message_header + message)      
-            except socket.error:          
-                time.sleep( 2 ) 
+                message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
+                client_socket.sendall(message_header + message)    
+            except socket.error:
+                time.sleep( 2 )
         return
 
 @ask.intent('ReceiveIntent')
@@ -322,7 +403,7 @@ def receive():
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
                 # Print message
-                print(f'\n{username} > {message}')
+                print('\n{} > {}'.format(username, message))
                 print(my_username + ' > ')
                 if(message[0] == 'd'):
                     print("splitting")
@@ -345,19 +426,19 @@ def receive():
             # We just did not receive anything
             continue
         except Exception as e:
-            print( "connection lost... reconnecting" )  
-            connected = False    
-            # recreate socket  
-            client_socket = socket.socket()    
-            while not connected:      
-            # attempt to reconnect, otherwise sleep for 2 seconds      
-                try:          
+            print( "connection lost... reconnecting" )
+            connected = False
+            # recreate socket
+            client_socket = socket.socket()
+            while not connected:
+            # attempt to reconnect, otherwise sleep for 2 seconds
+                try:
                     client_socket.connect( (IP, PORT) )
-                    client_socket.setblocking(False)          
-                    connected = True          
-                    print( "re-connection successful" )      
-                except socket.error:          
-                    time.sleep( 2 )  
+                    client_socket.setblocking(False)
+                    connected = True
+                    print( "re-connection successful" )
+                except socket.error:
+                    time.sleep( 2 )
 
 def goto(goal_x, goal_z):
     global z_pos
@@ -411,7 +492,37 @@ def findDistress():
     goto(goal_x, goal_z)
     return
 
+def followPerson():
+	global followFlag
+	vs = VideoStream(src=1).start()
+	time.sleep(2.0)
+	detector = apriltag.Detector()
 
+	# keep looping
+	while followFlag:
+		time.sleep(.1)
+		frame = vs.read()
+		frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		atags = detector.detect(frame)
+		temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+		for tag in atags:
+			corners = tag.corners
+			corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
+			tag_id = tag.tag_id
+			if tag.tag_id == 50:
+				center = tag.center
+				x = center[0]
+				if  pose[2] > 5.0:
+					if x<150:
+						left()
+					elif x>410:
+						right()
+					elif x>=150 and x <= 410:
+						forward()
+				else:
+					halt()
+	vs.release()
+	halt()
 
 if __name__ == '__main__':
 	print("starting app")
