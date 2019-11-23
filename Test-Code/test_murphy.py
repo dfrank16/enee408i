@@ -36,7 +36,7 @@ goal_z = 0.0
 curr_x = 0.0
 curr_z = 0.0
 curr_heading = 0.0
-heading_offset = math.pi/6.0
+heading_offset = 10.0
 goal_offset = 0.5
 z_pos = 0.0
 z_neg = 180.0
@@ -359,37 +359,56 @@ def receive():
                 except socket.error:          
                     time.sleep( 2 )  
 
-
-
-def findDistress():
-    wander()
-    while(not waiting):
-        time.sleep(0.5)
+def goto(goal_x, goal_z):
+    global z_pos
+    global x_neg
+    global x_pos
+    global curr_heading
+    global curr_z
+    global curr_x
     goal_theta = z_pos
     while(abs(curr_heading-goal_theta) > heading_offset):
         right()
         time.sleep(0.15)
+        getposition()
         halt()
     if curr_z > goal_z:
-        while(abs(curr_z-goal_z) > goal_offset):
+        while(curr_z-goal_z > goal_offset):
             forward()
             time.sleep(0.15)
+            getposition()
             halt()
     else:
-        while(abs(curr_z-goal_z) > goal_offset):
+        while(goal_z-curr_z > goal_offset):
             backward()
             time.sleep(0.15)
+            getposition()
             halt()
     goal_theta = x_pos if goal_x > curr_x else x_neg
     while(abs(curr_heading-goal_theta) > heading_offset):
         right()
         time.sleep(0.15)
+        getposition()
         halt()
-    while(abs(curr_x-goal_x) > goal_offset):
-        forward()
-        time.sleep(0.15)
-        halt()
+    if curr_x > goal_x:
+        while(curr_x-goal_x > goal_offset):
+            forward()
+            time.sleep(0.15)
+            getposition()
+            halt()
+    else:
+        while(goal_x-curr_x > goal_offset):
+            forward()
+            time.sleep(0.15)
+            getposition()
+            halt()
+    
     halt()
+def findDistress():
+    wander()
+    while(not waiting):
+        time.sleep(0.5)
+    goto(goal_x, goal_z)
     return
 
 
