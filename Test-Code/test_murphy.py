@@ -134,7 +134,6 @@ def halt():
                 try:
                         ser.write(struct.pack('>B', 0))
                         drive_state = 0
-                        stop = True
                 except:
                         arduino_write_fail()
 
@@ -251,6 +250,7 @@ def moveBack():
 @ask.intent('HaltIntent')
 def moveHalt():
 	halt()
+    stop = True
 	return question("Murphy has had enough of your hecking crap").reprompt("What would you like Murphy to do now?")
 
 @ask.intent('WanderIntent')
