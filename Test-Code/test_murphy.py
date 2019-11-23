@@ -358,28 +358,32 @@ def receive():
     global state
     global goal_x
     global goal_z
+    global HEADER_LENGTH
+    global waiting
     receiving = True
     print("Receiving")
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((IP, PORT))
+    time.sleep(0.5)
+    username = "Murphy".encode('utf-8')
+    header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+    client_socket.sendall(header + username)
+
     while receiving:
+ #       print("REESEEVEENG LOOP")
         try:
            # Now we want to loop over received messages (there might be more than one) and print them
-            client_socket = socket.socket()
-            client_socket.connect((IP, PORT))
-            client_socket.setblocking(False)
-                
-            username = "Murphy".encode('utf-8')
-            username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
-            client_socket.sendall(username_header + username)
-
-            username_header = client_socket.recv(HEADER_LENGTH)
-            print("hello")
+            #username_header = client_socket.recv(HEADER_LENGTH)
+  #          print("hello")
             while True:
+                time.sleep(2.0)
+                username_header = client_socket.recv(HEADER_LENGTH)
                 # Receive our "header" containing username length, it's size is defined and constant
                 
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
-                if not len(username_header):
-                    print('Connection closed by the server')
-                    sys.exit()
+                #if not len(username_header):
+                #    print('Connection closed by the server')
+                #    sys.exit()
                 # Convert header to int value
                 username_length = int(username_header.decode('utf-8').strip())
                 # Receive and decode username
@@ -389,15 +393,16 @@ def receive():
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
                 print('\n{} > {}'.format(username, message))
-                print(my_username + ' > ')
+#                print("message[0] = {}".format(message[0]))
                 if(message[0] == 'd'):
-                    print("splitting")
+ #                   print("splitting")
                     m = message.split()
                     m = m[1].split(',')
                     goal_x = float(m[0])
                     goal_z = float(m[1])
                     state = 1
                     receiving = False
+                    waiting = False
                     return
 
         except IOError as e:
@@ -414,12 +419,15 @@ def receive():
             print( "connection lost... reconnecting" )
             connected = False
             # recreate socket
-            client_socket = socket.socket()
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             while not connected:
             # attempt to reconnect, otherwise sleep for 2 seconds
                 try:
                     client_socket.connect( (IP, PORT) )
-                    client_socket.setblocking(False)
+                    #client_socket.setblocking(False)
+                    username = "Murphy".encode('utf-8')
+                    header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+                    client_socket.sendall(header + username)
                     connected = True
                     print( "re-connection successful" )
                 except socket.error:
@@ -479,9 +487,10 @@ def goto(goal_x, goal_z):
     
     halt()
 def findDistress():
+    global waiting
     wander()
     print(waiting)
-    while(not waiting):
+    while(waiting):
         time.sleep(0.5)
     goto(goal_x, goal_z)
     return
@@ -570,15 +579,15 @@ camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
 while frame is None:
 	time.sleep(0.5)	
-#print("starting app")
-#murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
-#murphythread.setDaemon(True)
-#murphythread.start()
+print("starting app")
+murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
+murphythread.setDaemon(True)
+murphythread.start()
 
 
 
-t = threading.Thread(target=receive, name='t_receive')
-t.start()
+#t = threading.Thread(target=receive, name='t_receive')
+#t.start()
 #t2 = threading.Thread(target=findDistress, name = 't_navigate')
 #t2.start()
 
