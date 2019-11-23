@@ -83,8 +83,9 @@ def start_camera():
 	while True:
 		time.sleep(.1)
 		temp_frame = vs.read()
-		temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		frame = temp_frame
+		if frame is not None:
+			temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			frame = temp_frame
 
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
