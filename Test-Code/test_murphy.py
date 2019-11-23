@@ -248,8 +248,9 @@ def moveBack():
 
 @ask.intent('HaltIntent')
 def moveHalt():
+	global stop
 	halt()
-    stop = True
+	stop = True
 	return question("Murphy has had enough of your hecking crap").reprompt("What would you like Murphy to do now?")
 
 @ask.intent('WanderIntent')
@@ -280,6 +281,7 @@ def followMeHandler():
 @ask.intent('StayIntent')
 def stayHandler():
 	global followFlag
+	global stop
 	followFlag = 0
 	halt()
     stop = True
@@ -454,6 +456,7 @@ def goto(goal_x, goal_z):
     if curr_z > goal_z and not stop:
         while(curr_z-goal_z > goal_offset and not stop):
             print("driving to z")
+            print(stop)
             forward()
             time.sleep(sleep_time)
             get_position()
@@ -462,6 +465,7 @@ def goto(goal_x, goal_z):
     else:
         while(goal_z-curr_z > goal_offset and not stop):
             print("driving to z")
+            print(stop)
             backward()
             time.sleep(sleep_time)
             get_position()
