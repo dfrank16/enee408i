@@ -53,8 +53,8 @@ frame = None
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
 PORT = 1234
-my_username = "Murphy"
-print("creating socket")
+#my_username = "Murphy"
+#print("creating socket")
 # Create a socket
 # socket.AF_INET - address family, IPv4, some otehr possible are AF_INET6, AF_BLUETOOTH, AF_UNIX
 #socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
@@ -177,7 +177,7 @@ def wander():
                         arduino_write_fail()
 
 def start_app(app):
-    app.run(debug=True)
+    app.run(debug=False)
 
 @ask.launch
 def launched():
@@ -310,7 +310,7 @@ def sendIntent():
     message = "distress: " + str(curr_x) + "," + str(curr_z)
     t = threading.Thread(target=send, name='t_send', args=(message,))
     t.start()
-    return statement('Sent distress signal')
+    return question('Sent distress signal').reprompt("Are you okay? What can Murphy do to help?").reprompt("The cleaners have been notified. RIP in peace.")
 
 
 def send(message):
@@ -331,6 +331,10 @@ def send(message):
                 connected = True
                 print( "re-connection successful" )
                 message = message.encode('utf-8')
+                username = "Murphy".encode('utf-8')
+                username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+                client_socket.sendall(username_header + username)
+
                 message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
                 client_socket.sendall(message_header + message)    
             except socket.error:
@@ -341,7 +345,9 @@ def send(message):
 def receiveIntent():
     t = threading.Thread(target=receive, name='t_receive')
     t.start()
-    return statement('Receiving Locations')
+    t2 = threading.Thread(target=findDistress, name = 't_navigate')
+    t2.start()
+    return question('Receiving Locations').reprompt("What would you like murphy to murph now?")
 
 
 
@@ -503,9 +509,6 @@ def followPerson():
 		else:
 			print("I can't see you! Turn left")
 			left()
-
-
-	vs.release()
 	halt()
 
 
@@ -514,6 +517,7 @@ def get_position():
     global curr_x
     global curr_z
     global curr_heading
+    detector = apriltag.Detector()
     atags = detector.detect(frame)	
 #	print(atag)
     yaw_bar = 0.0
@@ -541,7 +545,16 @@ camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
 while frame is None:
 	time.sleep(0.5)	
-print("starting app")
-murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
-murphythread.setDaemon(True)
-murphythread.start()
+#print("starting app")
+#murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
+#murphythread.setDaemon(True)
+#murphythread.start()
+
+
+
+t = threading.Thread(target=receive, name='t_receive')
+t.start()
+t2 = threading.Thread(target=findDistress, name = 't_navigate')
+t2.start()
+
+
