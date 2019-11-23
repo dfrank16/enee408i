@@ -75,20 +75,21 @@ def create_header(strLen, headLen):
     return result
 
 frame = None
-vs = VideoStream(src=1).start()
-time.sleep(5.0)
+#vs = VideoStream(src=1).start()
+#time.sleep(5.0)
 def start_camera():
 	global frame
     # keep looping
+	print("HELLO CAMERA")
+	vs = VideoStream(src=1).start()
+	time.sleep(3.0)
 	while True:
 		time.sleep(.1)
 		temp_frame = vs.read()
-		if frame is not None:
-			temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		if temp_frame is not None:
+			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
 			frame = temp_frame
 
-camthread = threading.Thread(target=start_camera, name='camthread')
-camthread.start()
 #start_camera()
 
 
@@ -536,12 +537,13 @@ def get_position():
     curr_x = x_bar/len(atags)
     curr_z = z_bar/len(atags)
 
-#if __name__ == '__main__':
-#	global frame
-#	while frame is None:
-#		time.sleep(0.5)	
-#	print("starting app")
-#	start_app()
+camthread = threading.Thread(target=start_camera, name='camthread')
+camthread.start()
+while frame is None:
+	time.sleep(0.5)	
+print("starting app")
+murphythread = threading.Thread(target=start_app, name = 'murphythread')
+murphythread.start()
 
 
 
