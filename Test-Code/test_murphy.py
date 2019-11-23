@@ -363,11 +363,16 @@ def receive():
             client_socket = socket.socket()
             client_socket.connect((IP, PORT))
             client_socket.setblocking(False)
+                
+            username = "Murphy".encode('utf-8')
+            username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+            client_socket.sendall(username_header + username)
+
             username_header = client_socket.recv(HEADER_LENGTH)
             print("hello")
             while True:
                 # Receive our "header" containing username length, it's size is defined and constant
-                # Print message
+                
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
                 if not len(username_header):
                     print('Connection closed by the server')
@@ -569,7 +574,7 @@ while frame is None:
 
 t = threading.Thread(target=receive, name='t_receive')
 t.start()
-t2 = threading.Thread(target=findDistress, name = 't_navigate')
-t2.start()
+#t2 = threading.Thread(target=findDistress, name = 't_navigate')
+#t2.start()
 
 
