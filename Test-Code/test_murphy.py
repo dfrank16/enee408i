@@ -360,12 +360,14 @@ def receive():
     while receiving:
         try:
            # Now we want to loop over received messages (there might be more than one) and print them
+            client_socket = socket.socket()
+            client_socket.connect((IP, PORT))
+            client_socket.setblocking(False)
+            username_header = client_socket.recv(HEADER_LENGTH)
+            print("hello")
             while True:
                 # Receive our "header" containing username length, it's size is defined and constant
-                client_socket = socket.socket()
-                client_socket.connect((IP, PORT))
-                client_socket.setblocking(False)
-                username_header = client_socket.recv(HEADER_LENGTH)
+                # Print message
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
                 if not len(username_header):
                     print('Connection closed by the server')
@@ -378,7 +380,6 @@ def receive():
                 message_header = client_socket.recv(HEADER_LENGTH)
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
-                # Print message
                 print('\n{} > {}'.format(username, message))
                 print(my_username + ' > ')
                 if(message[0] == 'd'):
@@ -425,36 +426,42 @@ def goto(goal_x, goal_z):
     global curr_x
     goal_theta = z_pos
     while(abs(curr_heading-goal_theta) > heading_offset):
+        print("finding z")
         right()
         time.sleep(0.15)
         get_position()
         halt()
     if curr_z > goal_z:
         while(curr_z-goal_z > goal_offset):
+            print("driving to z")
             forward()
             time.sleep(0.15)
             get_position()
             halt()
     else:
         while(goal_z-curr_z > goal_offset):
+            print("driving to z")
             backward()
             time.sleep(0.15)
             get_position()
             halt()
     goal_theta = x_pos if goal_x > curr_x else x_neg
     while(abs(curr_heading-goal_theta) > heading_offset):
+        print("finding x")
         right()
         time.sleep(0.15)
         get_position()
         halt()
     if curr_x > goal_x:
         while(curr_x-goal_x > goal_offset):
+            print("driving to x")
             forward()
             time.sleep(0.15)
             get_position()
             halt()
     else:
         while(goal_x-curr_x > goal_offset):
+            print("driving to x")
             forward()
             time.sleep(0.15)
             get_position()
@@ -524,7 +531,7 @@ def get_position():
 #	print(atag)
     yaw_bar = 0.0
     x_bar = 0.0
-    y_bar = 0.0
+    z_bar = 0.0
     atags = [a for a in atags if a.tag_id != 50]
     for tag in atags:
         corners = tag.corners
