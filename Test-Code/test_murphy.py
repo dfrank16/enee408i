@@ -15,7 +15,7 @@ import errno
 import threading
 import math
 from math import atan2, asin
-from imutils.video import VideoStream
+from imutils.video import WebcamVideoStream as VideoStream
 import apriltag
 import cv2
 import imutils
@@ -75,22 +75,20 @@ def create_header(strLen, headLen):
     return result
 
 frame = None
-
+vs = VideoStream(src=1).start()
+time.sleep(5.0)
 def start_camera():
-    global frame
-    vs = VideoStream(src=1).start()
-    time.sleep(2.0)
-    detector = apriltag.Detector()
+	global frame
     # keep looping
-    while True:
-        time.sleep(.1)
-        temp_frame = vs.read()
-        temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame = temp_frame
+	while True:
+		time.sleep(.1)
+		temp_frame = vs.read()
+		temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		frame = temp_frame
 
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
-
+#start_camera()
 
 
 #username = my_username.encode('utf-8')
@@ -103,8 +101,8 @@ camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+
 
 camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
 
-camera_distortions = numpy.array(camera_distortions)
-camera_matrix = numpy.array(camera_matrix)
+camera_distortions = np.array(camera_distortions)
+camera_matrix = np.array(camera_matrix)
 
 
 # Load world points
@@ -112,10 +110,10 @@ world_points = {}
 with open('worldPoints.json', 'r') as f:
         data = json.load(f)
 for k,v in data.items():
-        world_points[int(k)] = numpy.array(v, dtype=numpy.float32).reshape((4,3,1))
+        world_points[int(k)] = np.array(v, dtype=np.float32).reshape((4,3,1))
 
 def get_orientation(camera_matrix, R, t):
-        proj = camera_matrix.dot(numpy.hstack((R, t)))
+        proj = camera_matrix.dot(np.hstack((R, t)))
         rot = cv2.decomposeProjectionMatrix(proj)
         rot = rot[-1]
         return rot[1], rot[2], rot[0]
@@ -479,13 +477,14 @@ def followPerson():
 			if tag.tag_id == 50:
 				found = 1
 				break		
-        if found:	
-            center = tag.center
-            x = center[0]
-            retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
-            rot_matrix, _ = cv2.Rodrigues(rvec)
-            R = rot_matrix.transpose()
-            pose = -R @ tvec
+
+		if found:	
+			center = tag.center
+			x = center[0]
+			retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+			rot_matrix, _ = cv2.Rodrigues(rvec)
+			R = rot_matrix.transpose()
+			pose = -R @ tvec
 			if  pose[0] > 10.0:
 				if x<150:
 					left()
@@ -515,14 +514,13 @@ def get_position():
     global curr_heading
     atags = detector.detect(frame)	
 #	print(atag)
-    temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
     yaw_bar = 0.0
     x_bar = 0.0
     y_bar = 0.0
-    atags = [a in atags if a.tag_id != 50]
-    for tag in atags :	
+    atags = [a for a in atags if a.tag_id != 50]
+    for tag in atags:
         corners = tag.corners
-        corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
+        corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
         tag_id = tag.tag_id
         retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
         rot_matrix, _ = cv2.Rodrigues(rvec)
@@ -537,6 +535,18 @@ def get_position():
     curr_x = x_bar/len(atags)
     curr_z = z_bar/len(atags)
 
-if __name__ == '__main__':
-	print("starting app")
-	start_app()
+#if __name__ == '__main__':
+#	global frame
+#	while frame is None:
+#		time.sleep(0.5)	
+#	print("starting app")
+#	start_app()
+
+
+
+
+
+
+
+
+
