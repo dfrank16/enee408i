@@ -19,7 +19,8 @@ from imutils.video import VideoStream
 import apriltag
 import cv2
 import imutils
-
+import json
+import threading
 
 ser = serial.Serial('/dev/ttyACM0',9600)
 ser.timeout = 1.0
@@ -58,9 +59,9 @@ print("creating socket")
 #socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
 #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect to a given ip and port
-client_socket.connect((IP, PORT))
+#client_socket.connect((IP, PORT))
 # Set connection to non-blocking state, so .recv() call won;t block, just return some exception we'll handle
-client_socket.setblocking(False)
+#client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
 
@@ -72,10 +73,29 @@ def create_header(strLen, headLen):
             result = result + " "
     return result
 
-username = my_username.encode('utf-8')
-username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
-client_socket.sendall(username_header + username)
-print("done with socket")
+frame = None
+
+def start_camera():
+	global frame
+	vs = VideoStream(src=1).start()
+        time.sleep(2.0)
+        detector = apriltag.Detector()
+        # keep looping
+        while True:
+                time.sleep(.1)
+                temp_frame = vs.read()
+                temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		frame = temp_frame
+
+camthread = threading.Thread(target=start_camera, name='camthread')
+camthread.start()
+
+
+
+#username = my_username.encode('utf-8')
+#username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+#client_socket.sendall(username_header + username)
+#print("done with socket")
 
 
 camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
@@ -155,8 +175,6 @@ def wander():
                 except:
                         arduino_write_fail()
 
-
-
 def start_app():
     app.run(debug=True)
 
@@ -164,59 +182,6 @@ def start_app():
 def launched():
     return question("Hello. what would you like Murphy to do?").reprompt(
         "if you don't need Murphy, please tell him to go to sleep.")
-
-@ask.intent('PlayMusicIntent')
-def playMusic():
-    speech = "Here's one of my favorites"
-    stream_url = 'https://www.vintagecomputermusic.com/mp3/s2t9_Computer_Speech_Demonstration.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('StopSoundIntent')
-def stopSound():
-    speech = "Oopsie daisy. I'm sorry master"
-    return audio(speech).stop()
-
-@ask.intent('LifeAlertIntent')
-def lifeAlert():
-    speech = ""
-    stream_url = './LifeAlert.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('RandyOrtonIntent')
-def randyOrton():
-    speech = ""
-    stream_url = './WatchOutWatchOut.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('JohnCenaIntent')
-def johnCena():
-    speech = ""
-    stream_url = './AndHisNameIsJohnCena.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('YeetIntent')
-def yeet():
-    speech = ""
-    stream_url = './Yeet.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('AhhhIntent')
-def ahhh():
-    speech = ""
-    stream_url = './Ahhh.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('CPRIntent')
-def cpr():
-    speech = ""
-    stream_url = './StayingAlive.mp3'
-    return audio(speech).play(stream_url, offset=1000)
-
-@ask.intent('PirateMusicIntent')
-def pirateMusic():
-    speech = ""
-    stream_url = './PirateMusic.mp3'
-    return audio(speech).play(stream_url)
 
 @ask.intent('MoveIntent')
 def move(direction):
@@ -305,13 +270,16 @@ def attack():
 def followMeHandler():
 	global followFlag
 	followFlag = 1
-	thread.start_new_thread(followPerson, ())
+	followthread = 	threading.Thread(target=followPerson, name='followthread')
+	followthread.start()
+	return question("Murphy is following you now.").reprompt("What Murphy would you Murphy Murphy to Murphy now?")
 
 @ask.intent('StayIntent')
 def stayHandler():
 	global followFlag
 	followFlag = 0
 	halt()
+	return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
 @ask.intent('RollIntent')
@@ -475,33 +443,43 @@ def findDistress():
 
 def followPerson():
 	global followFlag
-	vs = VideoStream(src=1).start()
 	time.sleep(2.0)
 	detector = apriltag.Detector()
 
 	# keep looping
 	while followFlag:
 		time.sleep(.1)
-		frame = vs.read()
-		frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		atags = detector.detect(frame)
 		temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+		found = 0
 		for tag in atags:
 			corners = tag.corners
 			corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
 			tag_id = tag.tag_id
 			if tag.tag_id == 50:
-				center = tag.center
-				x = center[0]
-				if  pose[2] > 5.0:
-					if x<150:
-						left()
-					elif x>410:
-						right()
-					elif x>=150 and x <= 410:
-						forward()
-				else:
-					halt()
+				found = 1
+				break		
+		if found:	
+			center = tag.center
+			x = center[0]
+			if  pose[0] > 10.0:
+				if x<150:
+					left()
+					print("left")
+				elif x>410:
+					right()
+					print("right")
+				elif x>=150 and x <= 410:
+					forward()
+					print("forward")
+			else:
+				print("You're close enough. halt")
+				halt()
+		else:
+			print("I can't see you! Turn left")
+			left()
+
+
 	vs.release()
 	halt()
 
