@@ -15,11 +15,12 @@ import errno
 import threading
 import math
 from math import atan2, asin
-from imutils.video import VideoStream
+from imutils.video import WebcamVideoStream as VideoStream
 import apriltag
 import cv2
 import imutils
-
+import json
+import threading
 
 ser = serial.Serial('/dev/ttyACM0',9600)
 ser.timeout = 1.0
@@ -41,26 +42,28 @@ goal_z = 0.0
 curr_x = 0.0
 curr_z = 0.0
 curr_heading = 0.0
-heading_offset = math.pi/6.0
+heading_offset = 10.0
 goal_offset = 0.5
 z_pos = 0.0
 z_neg = 180.0
 x_pos = 90.0
 x_neg = -90.0
+frame = None
+stop = False
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
 PORT = 1234
-my_username = "Murphy"
-print("creating socket")
+#my_username = "Murphy"
+#print("creating socket")
 # Create a socket
 # socket.AF_INET - address family, IPv4, some otehr possible are AF_INET6, AF_BLUETOOTH, AF_UNIX
 #socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
 #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect to a given ip and port
-client_socket.connect((IP, PORT))
+#client_socket.connect((IP, PORT))
 # Set connection to non-blocking state, so .recv() call won;t block, just return some exception we'll handle
-client_socket.setblocking(False)
+#client_socket.setblocking(False)
 # Prepare username and header and send them
 # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
 
@@ -72,18 +75,37 @@ def create_header(strLen, headLen):
             result = result + " "
     return result
 
-username = my_username.encode('utf-8')
-username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
-client_socket.sendall(username_header + username)
-print("done with socket")
+frame = None
+#vs = VideoStream(src=1).start()
+#time.sleep(5.0)
+def start_camera():
+	global frame
+    # keep looping
+	print("HELLO CAMERA")
+	vs = VideoStream(src=1).start()
+	time.sleep(3.0)
+	while True:
+		time.sleep(.1)
+		temp_frame = vs.read()
+		if temp_frame is not None:
+			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
+			frame = temp_frame
+
+#start_camera()
+
+
+#username = my_username.encode('utf-8')
+#username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+#client_socket.sendall(username_header + username)
+#print("done with socket")
 
 
 camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
 
 camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
 
-camera_distortions = numpy.array(camera_distortions)
-camera_matrix = numpy.array(camera_matrix)
+camera_distortions = np.array(camera_distortions)
+camera_matrix = np.array(camera_matrix)
 
 
 # Load world points
@@ -91,10 +113,10 @@ world_points = {}
 with open('worldPoints.json', 'r') as f:
         data = json.load(f)
 for k,v in data.items():
-        world_points[int(k)] = numpy.array(v, dtype=numpy.float32).reshape((4,3,1))
+        world_points[int(k)] = np.array(v, dtype=np.float32).reshape((4,3,1))
 
 def get_orientation(camera_matrix, R, t):
-        proj = camera_matrix.dot(numpy.hstack((R, t)))
+        proj = camera_matrix.dot(np.hstack((R, t)))
         rot = cv2.decomposeProjectionMatrix(proj)
         rot = rot[-1]
         return rot[1], rot[2], rot[0]
@@ -155,68 +177,13 @@ def wander():
                 except:
                         arduino_write_fail()
 
-
-
-def start_app():
-    app.run(debug=True)
+def start_app(app):
+    app.run(debug=False)
 
 @ask.launch
 def launched():
     return question("Hello. what would you like Murphy to do?").reprompt(
         "if you don't need Murphy, please tell him to go to sleep.")
-
-@ask.intent('PlayMusicIntent')
-def playMusic():
-    speech = "Here's one of my favorites"
-    stream_url = 'https://www.vintagecomputermusic.com/mp3/s2t9_Computer_Speech_Demonstration.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('StopSoundIntent')
-def stopSound():
-    speech = "Oopsie daisy. I'm sorry master"
-    return audio(speech).stop()
-
-@ask.intent('LifeAlertIntent')
-def lifeAlert():
-    speech = ""
-    stream_url = './LifeAlert.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('RandyOrtonIntent')
-def randyOrton():
-    speech = ""
-    stream_url = './WatchOutWatchOut.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('JohnCenaIntent')
-def johnCena():
-    speech = ""
-    stream_url = './AndHisNameIsJohnCena.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('YeetIntent')
-def yeet():
-    speech = ""
-    stream_url = './Yeet.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('AhhhIntent')
-def ahhh():
-    speech = ""
-    stream_url = './Ahhh.mp3'
-    return audio(speech).play(stream_url)
-
-@ask.intent('CPRIntent')
-def cpr():
-    speech = ""
-    stream_url = './StayingAlive.mp3'
-    return audio(speech).play(stream_url, offset=1000)
-
-@ask.intent('PirateMusicIntent')
-def pirateMusic():
-    speech = ""
-    stream_url = './PirateMusic.mp3'
-    return audio(speech).play(stream_url)
 
 @ask.intent('MoveIntent')
 def move(direction):
@@ -281,7 +248,9 @@ def moveBack():
 
 @ask.intent('HaltIntent')
 def moveHalt():
+	global stop
 	halt()
+	stop = True
 	return question("Murphy has had enough of your hecking crap").reprompt("What would you like Murphy to do now?")
 
 @ask.intent('WanderIntent')
@@ -305,13 +274,18 @@ def attack():
 def followMeHandler():
 	global followFlag
 	followFlag = 1
-	thread.start_new_thread(followPerson, ())
+	followthread = 	threading.Thread(target=followPerson, name='followthread')
+	followthread.start()
+	return question("Murphy is following you now.").reprompt("What Murphy would you Murphy Murphy to Murphy now?")
 
 @ask.intent('StayIntent')
 def stayHandler():
 	global followFlag
+	global stop
 	followFlag = 0
 	halt()
+    stop = True
+	return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
 @ask.intent('RollIntent')
@@ -341,7 +315,7 @@ def sendIntent():
     message = "distress: " + str(curr_x) + "," + str(curr_z)
     t = threading.Thread(target=send, name='t_send', args=(message,))
     t.start()
-    return statement('Sent distress signal')
+    return question('Sent distress signal').reprompt("Are you okay? What can Murphy do to help?").reprompt("The cleaners have been notified. RIP in peace.")
 
 
 def send(message):
@@ -362,6 +336,10 @@ def send(message):
                 connected = True
                 print( "re-connection successful" )
                 message = message.encode('utf-8')
+                username = "Murphy".encode('utf-8')
+                username_header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+                client_socket.sendall(username_header + username)
+
                 message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
                 client_socket.sendall(message_header + message)    
             except socket.error:
@@ -372,7 +350,9 @@ def send(message):
 def receiveIntent():
     t = threading.Thread(target=receive, name='t_receive')
     t.start()
-    return statement('Receiving Locations')
+    t2 = threading.Thread(target=findDistress, name = 't_navigate')
+    t2.start()
+    return question('Receiving Locations').reprompt("What would you like murphy to murph now?")
 
 
 
@@ -380,20 +360,32 @@ def receive():
     global state
     global goal_x
     global goal_z
+    global HEADER_LENGTH
+    global waiting
     receiving = True
+    print("Receiving")
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((IP, PORT))
+    time.sleep(0.5)
+    username = "Murphy".encode('utf-8')
+    header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+    client_socket.sendall(header + username)
+
     while receiving:
+ #       print("REESEEVEENG LOOP")
         try:
            # Now we want to loop over received messages (there might be more than one) and print them
+            #username_header = client_socket.recv(HEADER_LENGTH)
+  #          print("hello")
             while True:
-                # Receive our "header" containing username length, it's size is defined and constant
-                client_socket = socket.socket()
-                client_socket.connect((IP, PORT))
-                client_socket.setblocking(False)
+                time.sleep(2.0)
                 username_header = client_socket.recv(HEADER_LENGTH)
+                # Receive our "header" containing username length, it's size is defined and constant
+                
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
-                if not len(username_header):
-                    print('Connection closed by the server')
-                    sys.exit()
+                #if not len(username_header):
+                #    print('Connection closed by the server')
+                #    sys.exit()
                 # Convert header to int value
                 username_length = int(username_header.decode('utf-8').strip())
                 # Receive and decode username
@@ -402,17 +394,17 @@ def receive():
                 message_header = client_socket.recv(HEADER_LENGTH)
                 message_length = int(message_header.decode('utf-8').strip())
                 message = client_socket.recv(message_length).decode('utf-8')
-                # Print message
                 print('\n{} > {}'.format(username, message))
-                print(my_username + ' > ')
+#                print("message[0] = {}".format(message[0]))
                 if(message[0] == 'd'):
-                    print("splitting")
+ #                   print("splitting")
                     m = message.split()
                     m = m[1].split(',')
                     goal_x = float(m[0])
                     goal_z = float(m[1])
                     state = 1
                     receiving = False
+                    waiting = False
                     return
 
         except IOError as e:
@@ -429,82 +421,186 @@ def receive():
             print( "connection lost... reconnecting" )
             connected = False
             # recreate socket
-            client_socket = socket.socket()
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             while not connected:
             # attempt to reconnect, otherwise sleep for 2 seconds
                 try:
                     client_socket.connect( (IP, PORT) )
-                    client_socket.setblocking(False)
+                    #client_socket.setblocking(False)
+                    username = "Murphy".encode('utf-8')
+                    header = create_header(len(username), HEADER_LENGTH).encode('utf-8')
+                    client_socket.sendall(header + username)
                     connected = True
                     print( "re-connection successful" )
                 except socket.error:
                     time.sleep( 2 )
 
-
-
-def findDistress():
-    wander()
-    while(not waiting):
-        time.sleep(0.5)
+def goto(goal_x, goal_z):
+    global z_pos
+    global x_neg
+    global x_pos
+    global curr_heading
+    global curr_z
+    global curr_x
+    global stop
+    sleep_time = 0.05
     goal_theta = z_pos
-    while(abs(curr_heading-goal_theta) > heading_offset):
+    stop = False
+    while(abs(curr_heading-goal_theta) > heading_offset and not stop):
+        print("finding z")
         right()
-        time.sleep(0.15)
+        time.sleep(sleep_time)
+        get_position()
+        time.sleep(sleep_time)
         halt()
-    if curr_z > goal_z:
-        while(abs(curr_z-goal_z) > goal_offset):
+    if curr_z > goal_z and not stop:
+        while(curr_z-goal_z > goal_offset and not stop):
+            print("driving to z")
+            print(stop)
             forward()
-            time.sleep(0.15)
+            time.sleep(sleep_time)
+            get_position()
+            time.sleep(sleep_time)
             halt()
     else:
-        while(abs(curr_z-goal_z) > goal_offset):
+        while(goal_z-curr_z > goal_offset and not stop):
+            print("driving to z")
+            print(stop)
             backward()
-            time.sleep(0.15)
+            time.sleep(sleep_time)
+            get_position()
+            time.sleep(sleep_time)
             halt()
     goal_theta = x_pos if goal_x > curr_x else x_neg
-    while(abs(curr_heading-goal_theta) > heading_offset):
+    while(abs(curr_heading-goal_theta) > heading_offset and not stop):
+        print("finding x")
         right()
-        time.sleep(0.15)
+        time.sleep(sleep_time)
+        get_position()
+        time.sleep(sleep_time)
         halt()
-    while(abs(curr_x-goal_x) > goal_offset):
-        forward()
-        time.sleep(0.15)
-        halt()
+    if curr_x > goal_x:
+        while(curr_x-goal_x > goal_offset and not stop):
+            print("driving to x")
+            forward()
+            time.sleep(sleep_time)
+            get_position()
+            time.sleep(sleep_time)
+            halt()
+    else:
+        while(goal_x-curr_x > goal_offset and not stop):
+            print("driving to x")
+            forward()
+            time.sleep(sleep_time)
+            get_position() 
+            time.sleep(sleep_time)
+            halt()
+    
     halt()
+def findDistress():
+    global waiting
+    waiting = True
+    wander()
+    print(waiting)
+    while(waiting):
+        time.sleep(0.5)
+    goto(goal_x, goal_z)
     return
 
 def followPerson():
 	global followFlag
-	vs = VideoStream(src=1).start()
 	time.sleep(2.0)
 	detector = apriltag.Detector()
 
 	# keep looping
 	while followFlag:
 		time.sleep(.1)
-		frame = vs.read()
-		frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		atags = detector.detect(frame)
-		temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+		temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+		found = 0
 		for tag in atags:
 			corners = tag.corners
-			corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
+			corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
 			tag_id = tag.tag_id
 			if tag.tag_id == 50:
-				center = tag.center
-				x = center[0]
-				if  pose[2] > 5.0:
-					if x<150:
-						left()
-					elif x>410:
-						right()
-					elif x>=150 and x <= 410:
-						forward()
-				else:
-					halt()
-	vs.release()
+				found = 1
+				break		
+
+		if found:	
+			center = tag.center
+			x = center[0]
+			retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+			rot_matrix, _ = cv2.Rodrigues(rvec)
+			R = rot_matrix.transpose()
+			pose = -R @ tvec
+			if  pose[0] > 10.0:
+				if x<150:
+					left()
+					print("left")
+				elif x>410:
+					right()
+					print("right")
+				elif x>=150 and x <= 410:
+					forward()
+					print("forward")
+			else:
+				print("You're close enough. halt")
+				halt()
+		else:
+			print("I can't see you! Turn left")
+			left()
 	halt()
 
-if __name__ == '__main__':
-	print("starting app")
-	start_app()
+
+def get_position():
+    global frame
+    global curr_x
+    global curr_z
+    global curr_heading
+    detector = apriltag.Detector()
+    atags = detector.detect(frame)	
+#	print(atag)
+    yaw_bar = 0.0
+    x_bar = 0.0
+    z_bar = 0.0
+    atags = [a for a in atags if a.tag_id != 50]
+    for tag in atags:
+        corners = tag.corners
+        corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
+        tag_id = tag.tag_id
+        retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+        rot_matrix, _ = cv2.Rodrigues(rvec)
+        R = rot_matrix.transpose()
+        pose = -R @ tvec
+        x_bar += pose[0]
+        z_bar += pose[2]
+        yaw, pitch, roll = get_orientation(camera_matrix, R, tvec)
+        yaw_bar += yaw
+		#print("Yaw: {} \n Pitch: {} \n Roll: {}".format(yaw,pitch,roll))
+    if len(atags) > 1:
+        curr_heading = yaw_bar/len(atags)
+        curr_x = x_bar/len(atags)
+        curr_z = z_bar/len(atags)
+    else:
+        curr_heading = yaw_bar
+        curr_x = x_bar
+        curr_z = z_bar
+
+
+camthread = threading.Thread(target=start_camera, name='camthread')
+camthread.start()
+while frame is None:
+	time.sleep(0.5)	
+print("starting app")
+murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
+murphythread.setDaemon(True)
+murphythread.start()
+
+
+
+#t = threading.Thread(target=receive, name='t_receive')
+#t.start()
+#t2 = threading.Thread(target=findDistress, name = 't_navigate')
+#t2.start()
+
+
