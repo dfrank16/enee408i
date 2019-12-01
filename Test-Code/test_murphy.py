@@ -497,6 +497,7 @@ def goto(goal_x, goal_z):
             halt()
     
     halt()
+    
 def findDistress():
     global waiting
     waiting = True
