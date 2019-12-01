@@ -21,9 +21,10 @@ import cv2
 import imutils
 import json
 import threading
+import math
 
-#ser = serial.Serial('/dev/ttyACM0',9600)
-#ser.timeout = 1.0
+ser = serial.Serial('/dev/ttyACM0',9600)
+ser.timeout = 1.0
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -50,6 +51,16 @@ x_pos = 90.0
 x_neg = -90.0
 frame = None
 stop = False
+drive_state = 0
+frame = None
+world_points = {}
+camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
+
+camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
+
+camera_distortions = np.array(camera_distortions)
+camera_matrix = np.array(camera_matrix)
+tag_sequence = []
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
@@ -75,7 +86,6 @@ def create_header(strLen, headLen):
             result = result + " "
     return result
 
-frame = None
 #vs = VideoStream(src=1).start()
 #time.sleep(5.0)
 def start_camera():
@@ -85,7 +95,7 @@ def start_camera():
 	vs = VideoStream(src=1).start()
 	time.sleep(3.0)
 	while True:
-		time.sleep(.1)
+		#time.sleep(.1)
 		temp_frame = vs.read()
 		if temp_frame is not None:
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
@@ -100,20 +110,34 @@ def start_camera():
 #print("done with socket")
 
 
-camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
+#Given a point (z,x), find the id of the closest apriltag
+def findClosestTag(z,x):
+    min_dist = 10000
+    min_tag = -1
+    for key in world_points.keys():
+        tag = world_points[key]
+        z_diff = abs(z - tag[0][0])
+        x_diff = abs(x - tag[0][2])
 
-camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
-
-camera_distortions = np.array(camera_distortions)
-camera_matrix = np.array(camera_matrix)
+        dist = math.sqrt((z_diff**2) + (x_diff**2))
+        if dist < min_dist:
+            min_dist = dist
+            min_tag = key
+    return min_tag
 
 
 # Load world points
-world_points = {}
 with open('worldPoints.json', 'r') as f:
         data = json.load(f)
+
 for k,v in data.items():
         world_points[int(k)] = np.array(v, dtype=np.float32).reshape((4,3,1))
+
+
+with open('tagSequence', 'r') as f:
+    for line in f.readlines():
+        tag_sequence.append(int(line))
+
 
 def get_orientation(camera_matrix, R, t):
         proj = camera_matrix.dot(np.hstack((R, t)))
@@ -121,12 +145,21 @@ def get_orientation(camera_matrix, R, t):
         rot = rot[-1]
         return rot[1], rot[2], rot[0]
 
+def get_pose(corners, points):
+        global camera_matrix
+        global camera_distortions
+        corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
+        retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+        rot_matrix, _ = cv2.Rodrigues(rvec)
+        R = rot_matrix.transpose()
+        pose = -R @ tvec
+        return pose
 
 def arduino_write_fail():
         print("Serial write to arduino timed out. Resetting connection")
         ser.close()
         ser.open()
-drive_state = 0
+
 def halt():
         global drive_state
         if drive_state != 0:
@@ -248,10 +281,12 @@ def moveBack():
 
 @ask.intent('HaltIntent')
 def moveHalt():
-	global stop
-	halt()
-	stop = True
-	return question("Murphy has had enough of your hecking crap").reprompt("What would you like Murphy to do now?")
+    global followFlag
+    global stop
+    halt()
+    stop = True
+    followFlag = 0
+    return question("Murphy has had enough of your hecking crap").reprompt("What would you like Murphy to do now?")
 
 @ask.intent('WanderIntent')
 def wander_command(command):
@@ -280,12 +315,12 @@ def followMeHandler():
 
 @ask.intent('StayIntent')
 def stayHandler():
-	global followFlag
-	global stop
-	followFlag = 0
-	halt()
+    global followFlag
+    global stop
+    followFlag = 0
+    halt()
     stop = True
-	return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
+    return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
 @ask.intent('RollIntent')
@@ -304,6 +339,8 @@ def default():
 
 @ask.intent('SleepIntent')
 def sleep():
+    global stop
+    stop = True
     halt()
     print("WE sleepING boiis")
     return statement('Murphy says he is snoring. Bye!')
@@ -341,7 +378,7 @@ def send(message):
                 client_socket.sendall(username_header + username)
 
                 message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
-                client_socket.sendall(message_header + message)    
+                client_socket.sendall(message_header + message)
             except socket.error:
                 time.sleep( 2 )
         return
@@ -381,7 +418,7 @@ def receive():
                 time.sleep(2.0)
                 username_header = client_socket.recv(HEADER_LENGTH)
                 # Receive our "header" containing username length, it's size is defined and constant
-                
+
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
                 #if not len(username_header):
                 #    print('Connection closed by the server')
@@ -435,122 +472,146 @@ def receive():
                 except socket.error:
                     time.sleep( 2 )
 
+#given a current tag_id and a target tag_id, return the id of the next tag in the sequence from current to target
+def getNextTag(current,target):
+    global tag_sequence
+    curr_i = tag_sequence.index(current)
+    target_i = tag_seuqnce.index(target)
+    if curr_i < target_i:
+        return tag_sequence[curr_i + 1]
+    else:
+        return tag_sequence[curr_i - 1]
+
+#def findTag(target):
+#    if target == -1:
+
+# Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
+# returns the id of the tag we've driven to.
+def goto_tag(target):
+    global frame
+    global stop
+    detector = apriltag.Detector()
+    #world origin is used for each tag to determine relative distance from Murphy to the tag
+    temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+    #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
+    target_tag = None if target == -1 else target
+    #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
+    while not stop:
+        found = 0
+        atags = detector.detect(frame)
+        for tag in atags: #look for our target
+            if target_tag is not None:
+                if tag.tag_id == target:
+                    found = 1
+                    break
+            else:#if target is undefined, we will lock onto the first tag we see
+                target_tag = tag.tag_id
+                found = 1
+                break
+        if found:
+            #try to keep the center of the tag in the center of the frame
+            x = tag.center[0]
+            pose = get_pose(tag.corners, temp_origin)
+            if  pose[0] > 10.0:
+                if x<150:
+                    left()
+                    print("left")
+                elif x>410:
+                    right()
+                    print("right")
+                elif x>=150 and x <= 410:
+                    forward()
+                    print("forward")
+            else:
+                print("You're close enough. halt and return")
+                halt()
+                return target_tag
+        else:
+            #Search for the target tag if we can't see it.
+            #TODO: Add more complex/better search code for when we can't see the target
+            print("I can't see you! Turn left")
+            left()
+    halt()
+
+
 def goto(goal_x, goal_z):
-    global z_pos
-    global x_neg
-    global x_pos
-    global curr_heading
-    global curr_z
-    global curr_x
     global stop
     sleep_time = 0.05
-    goal_theta = z_pos
-    stop = False
-    while(abs(curr_heading-goal_theta) > heading_offset and not stop):
-        print("finding z")
-        right()
-        time.sleep(sleep_time)
-        get_position()
-        time.sleep(sleep_time)
-        halt()
-    if curr_z > goal_z and not stop:
-        while(curr_z-goal_z > goal_offset and not stop):
-            print("driving to z")
-            print(stop)
-            forward()
-            time.sleep(sleep_time)
-            get_position()
-            time.sleep(sleep_time)
-            halt()
-    else:
-        while(goal_z-curr_z > goal_offset and not stop):
-            print("driving to z")
-            print(stop)
-            backward()
-            time.sleep(sleep_time)
-            get_position()
-            time.sleep(sleep_time)
-            halt()
-    goal_theta = x_pos if goal_x > curr_x else x_neg
-    while(abs(curr_heading-goal_theta) > heading_offset and not stop):
-        print("finding x")
-        right()
-        time.sleep(sleep_time)
-        get_position()
-        time.sleep(sleep_time)
-        halt()
-    if curr_x > goal_x:
-        while(curr_x-goal_x > goal_offset and not stop):
-            print("driving to x")
-            forward()
-            time.sleep(sleep_time)
-            get_position()
-            time.sleep(sleep_time)
-            halt()
-    else:
-        while(goal_x-curr_x > goal_offset and not stop):
-            print("driving to x")
-            forward()
-            time.sleep(sleep_time)
-            get_position() 
-            time.sleep(sleep_time)
-            halt()
-    
+    #stop = False
+
+    #Determine our final target
+    target_tag = findClosestTag(goal_z,goal_x)
+    #Get to some starting tag
+    curent_tag = goto_tag(-1)
+
+    while (not stop) and (current_tag is not target_tag):
+        #figure out what the next tag we need to drive to is
+        next_tag = getNextTag(current_tag, target_tag)
+        #drive to next target
+        goto_tag(next_tag)
+        #if current tag is our final target, we're done.
+        if current_tag == target_tag:
+            print("Target acquired: We're here")
+            break
     halt()
-    
+
+
+
 def findDistress():
     global waiting
+    global stop
     waiting = True
     wander()
     print(waiting)
     while(waiting):
         time.sleep(0.5)
+    stop = False
     goto(goal_x, goal_z)
     return
 
 def followPerson():
-	global followFlag
-	time.sleep(2.0)
-	detector = apriltag.Detector()
+    global stop
+    global followFlag
+    time.sleep(2.0)
+    detector = apriltag.Detector()
 
 	# keep looping
-	while followFlag:
-		time.sleep(.1)
-		atags = detector.detect(frame)
-		temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
-		found = 0
-		for tag in atags:
-			corners = tag.corners
-			corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
-			tag_id = tag.tag_id
-			if tag.tag_id == 5:
-				found = 1
-				break		
-
-		if found:	
-			center = tag.center
-			x = center[0]
-			retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
-			rot_matrix, _ = cv2.Rodrigues(rvec)
-			R = rot_matrix.transpose()
-			pose = -R @ tvec
-			if  pose[0] > 10.0:
-				if x<150:
-					#left()
-					print("left")
-				elif x>410:
-					#right()
-					print("right")
-				elif x>=150 and x <= 410:
-					#forward()
-					print("forward")
-			else:
-				print("You're close enough. halt")
-#				halt()
-		else:
-			print("I can't see you! Turn left")
-#			left()
-#	halt()
+    while followFlag and (not stop):
+        time.sleep(.1)
+        atags = detector.detect(frame)
+        temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+        found = 0
+        for tag in atags:
+            corners = tag.corners
+            corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
+            tag_id = tag.tag_id
+            if tag.tag_id == 50:
+                found = 1
+                break
+        if found:
+            center = tag.center
+            x = center[0]
+            retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+            rot_matrix, _ = cv2.Rodrigues(rvec)
+            R = rot_matrix.transpose()
+            pose = -R @ tvec
+            if  pose[0] > 10.0:
+                if x<150:
+                    left()
+                    print("left")
+                elif x>410:
+                    right()
+                    print("right")
+                elif x>=150 and x <= 410:
+                    forward()
+                    print("forward")
+            else:
+                print("You're close enough. halt")
+                halt()
+        else:
+            print("I can't see you! Turn left")
+            left()
+    halt()
 
 
 def get_position():
@@ -559,7 +620,7 @@ def get_position():
     global curr_z
     global curr_heading
     detector = apriltag.Detector()
-    atags = detector.detect(frame)	
+    atags = detector.detect(frame)
 #	print(atag)
     yaw_bar = 0.0
     x_bar = 0.0
@@ -586,14 +647,12 @@ def get_position():
         curr_heading = yaw_bar
         curr_x = x_bar
         curr_z = z_bar
-    print(curr_heading)
-    print(curr_x)
-    print(curr_z)
+
 
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
 while frame is None:
-	time.sleep(0.5)	
+	time.sleep(0.5)
 print("starting app")
 murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
 murphythread.setDaemon(True)
@@ -605,5 +664,3 @@ murphythread.start()
 #t.start()
 #t2 = threading.Thread(target=findDistress, name = 't_navigate')
 #t2.start()
-
-

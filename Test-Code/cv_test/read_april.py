@@ -18,8 +18,8 @@ import struct
 from flask import Flask, render_template
 #from flask_ask import Ask
 import serial
-arduino = serial.Serial('/dev/ttyACM0', 9600)
-arduino.timeout=0.3
+#arduino = serial.Serial('/dev/ttyACM0', 9600)
+#arduino.timeout=0.3
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video",
@@ -51,12 +51,12 @@ camera_distortions = [ 1.57676072e+00, -1.08291448e+02,  5.73675451e-02,  7.2512
 camera_distortions = numpy.array(camera_distortions)
 camera_matrix = numpy.array(camera_matrix)
 
-follow = 1 
+follow = 0 
 drive_state = 0
 
 # Load world points
 world_points = {}
-with open('worldPoints.json', 'r') as f:
+with open('worldPoints2.json', 'r') as f:
 	data = json.load(f)
 for k,v in data.items():
 	world_points[int(k)] = numpy.array(v, dtype=numpy.float32).reshape((4,3,1))
@@ -71,11 +71,11 @@ def get_orientation(camera_matrix, R, t):
 	rot = cv2.decomposeProjectionMatrix(proj)
 	rot = rot[-1]
 	return rot[1], rot[2], rot[0]
-
+print("looping")
 # keep looping
 while True:
 
-	time.sleep(.1)
+	time.sleep(.75)
 	# grab the current frame
 	frame = vs.read()
 	#frame = vs.grab()
@@ -96,6 +96,12 @@ while True:
 	atags = detector.detect(frame)	
 #	print(atag)
 	temp_origin = numpy.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+	currx = 0.0
+	curry =0.0
+	currz = 0.0
+	curryaw = 0.0
+	currpitch = 0.0
+	currroll = 0.0
 	for tag in atags:	
 		corners = tag.corners
 		corners = numpy.array(corners, dtype=numpy.float32).reshape((4,2,1))
@@ -105,8 +111,15 @@ while True:
 		R = rot_matrix.transpose()
 		pose = -R @ tvec
 		yaw, pitch, roll = get_orientation(camera_matrix, R, tvec)
-		#print("Yaw: {} \n Pitch: {} \n Roll: {}".format(yaw,pitch,roll))
-		#print("Pose: {}\n\n".format(pose))
+		print(tag_id)
+		currx += pose[0]
+		curry += pose[1]
+		currz += pose[2]
+		curryaw += yaw
+		currpitch += pitch
+		currroll += roll
+		print("Yaw: {} \n Pitch: {} \n Roll: {}".format(yaw,pitch,roll))
+		print("Pose: {}\n\n".format(pose))
 		if follow and tag.tag_id == 50:
 			center = tag.center
 			x = center[0]
@@ -155,7 +168,15 @@ while True:
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 
+	currx /= len(atags)
+	curry /= len(atags)
+	currz /= len(atags)
+	curryaw /= len(atags)
+	currpitch /= len(atags)
+	currroll /= len(atags)
+	print("X: {}, Y: {}, Z: {}, Yaw: {}, Pitch {}, Roll {}".format(currx, curry, currz, curryaw, currpitch, currroll))
 
+	
 # if we are not using a video file, stop the camera video stream
 if not args.get("video", False):
 	vs.stop()
