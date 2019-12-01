@@ -22,8 +22,8 @@ import imutils
 import json
 import threading
 
-ser = serial.Serial('/dev/ttyACM0',9600)
-ser.timeout = 1.0
+#ser = serial.Serial('/dev/ttyACM0',9600)
+#ser.timeout = 1.0
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -515,7 +515,7 @@ def followPerson():
 			corners = tag.corners
 			corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
 			tag_id = tag.tag_id
-			if tag.tag_id == 50:
+			if tag.tag_id == 5:
 				found = 1
 				break		
 
@@ -528,21 +528,21 @@ def followPerson():
 			pose = -R @ tvec
 			if  pose[0] > 10.0:
 				if x<150:
-					left()
+					#left()
 					print("left")
 				elif x>410:
-					right()
+					#right()
 					print("right")
 				elif x>=150 and x <= 410:
-					forward()
+					#forward()
 					print("forward")
 			else:
 				print("You're close enough. halt")
-				halt()
+#				halt()
 		else:
 			print("I can't see you! Turn left")
-			left()
-	halt()
+#			left()
+#	halt()
 
 
 def get_position():
@@ -578,7 +578,9 @@ def get_position():
         curr_heading = yaw_bar
         curr_x = x_bar
         curr_z = z_bar
-
+    print(curr_heading)
+    print(curr_x)
+    print(curr_z)
 
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
