@@ -284,7 +284,7 @@ def stayHandler():
 	global stop
 	followFlag = 0
 	halt()
-    stop = True
+	stop = True
 	return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
