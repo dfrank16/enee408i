@@ -268,6 +268,7 @@ def wander_command(command):
 
 @ask.intent('AttackIntent')
 def attack():
+    tag_seq()
     return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 @ask.intent('FollowMeIntent')
@@ -523,7 +524,7 @@ def followPerson():
 			corners = tag.corners
 			corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
 			tag_id = tag.tag_id
-			if tag.tag_id == 5:
+			if tag.tag_id == 50:
 				found = 1
 				break		
 
@@ -546,6 +547,59 @@ def followPerson():
 					print("forward")
 			else:
 				print("You're close enough. halt")
+#				halt()
+		else:
+			print("I can't see you! Turn left")
+#			left()
+#	halt()
+
+def tag_seq():
+    tags = [5, 6, 8, 9]
+    while len(tags) > 0:
+        print("Going to" + str(tags))
+        findTag(tags[0])
+        tags.pop(0)
+    print("Found")
+
+
+def findTag(tag):
+	time.sleep(2.0)
+	detector = apriltag.Detector()
+
+	# keep looping
+	while True:
+		time.sleep(.1)
+		atags = detector.detect(frame)
+		temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+		found = 0
+		for tag in atags:
+			corners = tag.corners
+			corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
+			tag_id = tag.tag_id
+			if tag.tag_id == tag:
+				found = 1
+				break		
+
+		if found:	
+			center = tag.center
+			x = center[0]
+			retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+			rot_matrix, _ = cv2.Rodrigues(rvec)
+			R = rot_matrix.transpose()
+			pose = -R @ tvec
+			if  pose[0] > 10.0:
+				if x<150:
+					#left()
+					print("left")
+				elif x>410:
+					#right()
+					print("right")
+				elif x>=150 and x <= 410:
+					#forward()
+					print("forward")
+			else:
+				print("You're close enough. halt")
+                return True
 #				halt()
 		else:
 			print("I can't see you! Turn left")
@@ -595,6 +649,8 @@ camthread.start()
 while frame is None:
 	time.sleep(0.5)	
 print("starting app")
+
+# tag_seq()
 murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
 murphythread.setDaemon(True)
 murphythread.start()
