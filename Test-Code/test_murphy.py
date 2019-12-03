@@ -269,7 +269,7 @@ def wander_command(command):
 def danceIntent():
     t = threading.Thread(target=dance, name='t_dance')
     t.start()
-    danceString = """To the left, take it back now yall. One hop this time. Right foot let's stomp. 
+    danceString = """To the left, take it back now yall. One hop this time <break time="2s">. Right foot let's stomp. 
                     Left foot let's stomp. Cha cha real smooth. Doot do doot do.
                      . . . . j . j. j. l . l . l . u . u . u . u . oh oh oh oh oh c c c c c c"""
     return question(danceString).reprompt("Yo dog, my moves are fresh. What do you want me to do next?")
@@ -294,7 +294,7 @@ def dance():
     for i in range(0, 10):
         left()
         time.sleep(0.5)
-        right
+        right()
         time.sleep(0.5)
     halt()
 
