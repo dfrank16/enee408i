@@ -22,8 +22,8 @@ import imutils
 import json
 import threading
 
-#ser = serial.Serial('/dev/ttyACM0',9600)
-#ser.timeout = 1.0
+ser = serial.Serial('/dev/ttyACM0',9600)
+ser.timeout = 1.0
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -554,7 +554,7 @@ def followPerson():
 #	halt()
 
 def tag_seq():
-    tags = [5, 6, 8, 9]
+    tags = [0, 1, 2, 3]
     while len(tags) > 0:
         print("Going to" + str(tags))
         findTag(tags[0])
@@ -589,22 +589,23 @@ def findTag(tag):
 			pose = -R @ tvec
 			if  pose[0] > 10.0:
 				if x<150:
-					#left()
+					left()
 					print("left")
 				elif x>410:
-					#right()
+					right()
 					print("right")
 				elif x>=150 and x <= 410:
-					#forward()
+					forward()
 					print("forward")
 			else:
 				print("You're close enough. halt")
-                return True
-#				halt()
+				halt()
+				return True
+				
 		else:
 			print("I can't see you! Turn left")
-#			left()
-#	halt()
+			left()
+	halt()
 
 
 def get_position():
