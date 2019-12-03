@@ -149,7 +149,8 @@ def get_pose(corners, points):
         global camera_matrix
         global camera_distortions
         corners = np.array(corners, dtype=np.float32).reshape((4,2,1))
-        retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+        points = np.array(points, dtype=np.float32).reshape((4,3,1))
+        retval, rvec, tvec = cv2.solvePnP(points, corners, camera_matrix, camera_distortions)
         rot_matrix, _ = cv2.Rodrigues(rvec)
         R = rot_matrix.transpose()
         pose = -R @ tvec
@@ -303,6 +304,7 @@ def wander_command(command):
 
 @ask.intent('AttackIntent')
 def attack():
+    goto(15, 0)
     return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 @ask.intent('FollowMeIntent')
@@ -493,15 +495,18 @@ def goto_tag(target):
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+
+    print("Attempting to navigate to tag #{}".format(target))
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
     target_tag = None if target == -1 else target
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
     while not stop:
+        print("Looking for tag #{}".format(target_tag))
         found = 0
         atags = detector.detect(frame)
         for tag in atags: #look for our target
             if target_tag is not None:
-                if tag.tag_id == target:
+                if tag.tag_id == target_tag:
                     found = 1
                     break
             else:#if target is undefined, we will lock onto the first tag we see
@@ -531,6 +536,8 @@ def goto_tag(target):
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
             left()
+            time.sleep(0.25)
+            halt()
     halt()
 
 
@@ -538,16 +545,18 @@ def goto(goal_x, goal_z):
     global stop
     sleep_time = 0.05
     #stop = False
-
+    print("Received command to go to x = {}, y = {}".format(goal_x, goal_z))
     #Determine our final target
     target_tag = findClosestTag(goal_z,goal_x)
     #Get to some starting tag
-    curent_tag = goto_tag(-1)
+    print("Determined the target tag is tag #{}".format(target_tag))
+    current_tag = goto_tag(-1)
 
     while (not stop) and (current_tag is not target_tag):
         #figure out what the next tag we need to drive to is
         next_tag = getNextTag(current_tag, target_tag)
         #drive to next target
+        print("Next tag: {}, Current Tag:{}".format(next_tag,current_tag))
         goto_tag(next_tag)
         #if current tag is our final target, we're done.
         if current_tag == target_tag:
