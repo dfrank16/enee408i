@@ -342,7 +342,7 @@ def send(message):
                 client_socket.sendall(username_header + username)
 
                 message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
-                client_socket.sendall(message_header + message)    
+                client_socket.sendall(message_header + message)
             except socket.error:
                 time.sleep( 2 )
         return
@@ -382,7 +382,7 @@ def receive():
                 time.sleep(2.0)
                 username_header = client_socket.recv(HEADER_LENGTH)
                 # Receive our "header" containing username length, it's size is defined and constant
-                
+
                 # If we received no data, server gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
                 #if not len(username_header):
                 #    print('Connection closed by the server')
@@ -493,12 +493,12 @@ def goto(goal_x, goal_z):
             print("driving to x")
             forward()
             time.sleep(sleep_time)
-            get_position() 
+            get_position()
             time.sleep(sleep_time)
             halt()
-    
+
     halt()
-    
+
 def findDistress():
     global waiting
     waiting = True
@@ -526,12 +526,12 @@ def followPerson():
 			tag_id = tag.tag_id
 			if tag.tag_id == 50:
 				found = 1
-				break		
+				break
 
-		if found:	
+		if found:
 			center = tag.center
 			x = center[0]
-			retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+			retval, rvec, tvec = cv2.solvePnP(temp_origin, corners, camera_matrix, camera_distortions)
 			rot_matrix, _ = cv2.Rodrigues(rvec)
 			R = rot_matrix.transpose()
 			pose = -R @ tvec
@@ -578,12 +578,12 @@ def findTag(tag):
 			tag_id = tag.tag_id
 			if tag.tag_id == tag:
 				found = 1
-				break		
+				break
 
-		if found:	
+		if found:
 			center = tag.center
 			x = center[0]
-			retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+			retval, rvec, tvec = cv2.solvePnP(temp_origin, corners, camera_matrix, camera_distortions)
 			rot_matrix, _ = cv2.Rodrigues(rvec)
 			R = rot_matrix.transpose()
 			pose = -R @ tvec
@@ -613,7 +613,7 @@ def get_position():
     global curr_z
     global curr_heading
     detector = apriltag.Detector()
-    atags = detector.detect(frame)	
+    atags = detector.detect(frame)
 #	print(atag)
     yaw_bar = 0.0
     x_bar = 0.0
@@ -647,7 +647,7 @@ def get_position():
 camthread = threading.Thread(target=start_camera, name='camthread')
 camthread.start()
 while frame is None:
-	time.sleep(0.5)	
+	time.sleep(0.5)
 print("starting app")
 
 # tag_seq()
@@ -661,5 +661,3 @@ murphythread.start()
 #t.start()
 #t2 = threading.Thread(target=findDistress, name = 't_navigate')
 #t2.start()
-
-

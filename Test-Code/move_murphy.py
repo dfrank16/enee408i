@@ -591,7 +591,7 @@ def followPerson():
         if found:
             center = tag.center
             x = center[0]
-            retval, rvec, tvec = cv2.solvePnP(world_points[tag_id], corners, camera_matrix, camera_distortions)
+            retval, rvec, tvec = cv2.solvePnP(temp_origin, corners, camera_matrix, camera_distortions)
             rot_matrix, _ = cv2.Rodrigues(rvec)
             R = rot_matrix.transpose()
             pose = -R @ tvec
