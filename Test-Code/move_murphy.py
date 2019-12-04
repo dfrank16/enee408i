@@ -673,6 +673,8 @@ def goto_tag(target):
                     halt()
                     time.sleep(stop_time)
             else:
+                ser.close()
+                ser.open()
                 print("You're close enough. halt and return")
                 halt()
                 if last == "left":
@@ -719,8 +721,6 @@ def goto_tag(target):
                 halt()
                 step_counter += 1
             else:
-                ser.close()
-                ser.open()
                 wander()
                 time.sleep(7)
                 step_counter = 0
