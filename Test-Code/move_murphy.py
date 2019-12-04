@@ -63,6 +63,10 @@ camera_distortions = [[-0.08959985635048899], [0.0001713488859657656], [-0.06283
 camera_distortions = np.array(camera_distortions)
 camera_matrix = np.array(camera_matrix)
 tag_sequence = []
+seen = []
+taken = False
+
+
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
@@ -313,7 +317,8 @@ def wander_command(command):
 def attack():
     goto_thread = threading.Thread(target=goto, args=(15,0,), name="goto")
     goto_thread.start()
-    return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
+
+    return question("Argh, attack, attack, exterminate").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 @ask.intent('FollowMeIntent')
 def followMeHandler():
@@ -333,12 +338,29 @@ def stayHandler():
     return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
+@ask.intent('MedicineIntent')
+def medicine():
+    global taken
+    if taken:
+        return question("Yes, you have taken your medication already.").reprompt("What would you like murphy to do now?")
+    else:
+        taken = True
+        return question("No, but you should take your medicine now.").reprompt("What would you like murphy to do now?")
+
+@ask.intent('MedicineTakenIntent')
+def medicineTaken():
+    global taken
+    taken = True
+    return question("Nice job. I'll mark that down for you.").reprompt("What would you like murphy to do now?")
+
+
+
 @ask.intent('RollIntent')
 def rollOver():
     right()
     time.sleep(3.0)
     halt()
-    return question("Ayyye! Murphy rolled over.").reprompt("What would you like Murphy to do now?")
+    return question("Borf, Borf, Borf!  Murphy rolled over.").reprompt("What would you like Murphy to do now?")
 
 
 @ask.intent('AMAZON.FallbackIntent')
@@ -350,10 +372,91 @@ def default():
 @ask.intent('SleepIntent')
 def sleep():
     global stop
+    global taken
+    taken = False
     stop = True
     halt()
     print("WE sleepING boiis")
     return statement('Murphy says he is snoring. Bye!')
+
+@ask.intent('DanceIntent')
+def danceIntent():
+    t = threading.Thread(target=dance, name='t_dance')
+    t.start()
+    danceString = """To the left, take it back now yall. One hop this time. Right foot let's stomp. 
+                    Left foot let's stomp. Cha cha real smooth. Doot do doot do. Doot do do. 
+                    Wookie wookie wow.
+                    Soulja boy off in this ohhh. Watch me crank it, watch me roll.
+                    Watch me crank dat Soulja boy then superman that oh.
+                    Wookie wookie wow.
+                    All the single ladies. All the single ladies. All the single ladies.
+                    All the single ladies. Now put your hands up.
+                     """
+    return question(danceString).reprompt("Yo dog, my moves are fresh. What do you want me to do next?")
+
+
+def dance():
+    # Cha cha slide
+    left()
+    time.sleep(2.0)
+    backward()
+    time.sleep(2.0)
+    halt()
+    time.sleep(0.5)
+    forward()
+    time.sleep(0.5)
+    halt()
+    time.sleep(1.5)
+    right()
+    time.sleep(1.0)
+    left()
+    time.sleep(1.0)
+    halt()
+    time.sleep(1.0)
+    for i in range(0, 2):
+        left()
+        time.sleep(0.5)
+        right()
+        time.sleep(0.5)
+    halt()
+    time.sleep(2.0)
+    # Crank dat
+    left()
+    time.sleep(1.0)
+    right()
+    time.sleep(1.0)
+    halt()
+    time.sleep(0.5)
+    forward()
+    time.sleep(0.5)
+    halt()
+    time.sleep(2.0)
+    # All the single ladies
+    for i in range(0, 3):
+        left()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        right()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        left()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        right()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    forward()
+    time.sleep(1.5)
+    halt()
+
+
 
 @ask.intent('SendIntent')
 def sendIntent():
@@ -362,7 +465,7 @@ def sendIntent():
     message = "distress: " + str(curr_x) + "," + str(curr_z)
     t = threading.Thread(target=send, name='t_send', args=(message,))
     t.start()
-    return question('Sent distress signal').reprompt("Are you okay? What can Murphy do to help?").reprompt("The cleaners have been notified. RIP in peace.")
+    return question('Sent distress signal').reprompt("Are you okay? What can Murphy do to help?")
 
 
 def send(message):
@@ -495,7 +598,9 @@ def getNextTag(current,target):
 #    if target == -1:
 
 def get_closest(target_tag):
-    current_tag = -1
+    global tag_sequence
+    global seen
+    current_tag = None
 
     cvQueue1.put(1)
     cvQueue1.join()
@@ -510,8 +615,9 @@ def get_closest(target_tag):
         print("bleh")
         return None
     for tag in atags:
-        if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
-            print(tag.tag_id)
+        print("Atag: " + str(tag.tag_id))
+        if tag.tag_id in tag_sequence and not tag.tag_id in seen and abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
+            print("New Delta " + str(tag.tag_id))
             delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
             current_tag = tag
     return current_tag
@@ -527,6 +633,9 @@ def goto_tag(target):
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
     last = "forward"
+    lcount = 0
+    rcount = 0
+    fcount = 0
 
     print("Attempting to navigate to tag #{}".format(target))
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
@@ -551,33 +660,70 @@ def goto_tag(target):
             print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  abs(pose[0]) > 7.5:
+            if  abs(pose[0]) > 7.25:
                 if x<150:
                     left()
                     print("left")
                     time.sleep(stop_time)
                     last = "left"
+                    lcount += 1
+                    fcount= 0
+                    rcount = 0
+                    if lcount > 5:
+                        backward()
+                        time.sleep(1.5)
+                        halt()
+                        lcount = 0
                 elif x>410:
                     right()
                     print("right")
                     time.sleep(stop_time)
                     last = "right"
+                    rcount += 1
+                    fcount= 0
+                    lcount = 0
+                    if rcount > 5:
+                        backward()
+                        time.sleep(1.5)
+                        halt()
+                        rcount = 0
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
-                    time.sleep(0.8)
+                    time.sleep(1.5)
                     halt()
                     time.sleep(stop_time)
+                    fcount += 1
+                    lcount= 0
+                    rcount = 0
+                    if fcount > 5:
+                        backward()
+                        time.sleep(1.5)
+                        halt()
+                        fcount = 0
+
             else:
+                ser.close()
+                ser.open()
                 print("You're close enough. halt and return")
+                seen.append(tag.tag_id)
+                dlrop = abs(tag_sequence.index(target_tag) - tag_sequence.index(tag.tag_id))
+                for tagy in tag_sequence:
+                    delt = abs(tag_sequence.index(target_tag) - tag_sequence.index(tagy))
+                    if delt > dlrop:
+                        seen.append(tagy)
+
+
                 halt()
                 if last == "left":
+                    print("HaltRight")
                     right()
                     time.sleep(0.3)
                     backward()
                     time.sleep(0.2)
                     halt()
-                elif last == "right":
+                else:
+                    print("HaltLeft")
                     left()
                     time.sleep(0.3)
                     backward()
@@ -588,12 +734,31 @@ def goto_tag(target):
         else:
             #Search for the target tag if we can't see it.
             #TODO: Add more complex/better search code for when we can't see the target
-            print("I can't see you! Turn left")
+            print("I can't see you! Turn " + last)
             
-            if step_counter < 10:
-                left()
+            if step_counter == 0:
+                if last == "left":
+                    right()
+                    last = "right"
+                else:
+                    left()
+                    last = "left"
            # time.sleep(0.075)
-                time.sleep(step_time)
+                time.sleep(stop_time)
+                halt()
+                step_counter += 1
+            elif step_counter < 10:
+                if step_counter == 5:
+                    ser.close()
+                    ser.open()
+                if last == "right":
+                    right()
+                    last = "right"
+                else:
+                    left()
+                    last = "left"
+           # time.sleep(0.075)
+                time.sleep(0.65)
                 halt()
                 step_counter += 1
             else:
@@ -607,12 +772,14 @@ def goto_tag(target):
 
 def goto(goal_x, goal_z):
     global stop
+    global tag_sequence
     sleep_time = 0.05
     #stop = False
     print("Received command to go to x = {}, y = {}".format(goal_x, goal_z))
+    print(tag_sequence)
     #Determine our final target
     #target_tag = findClosestTag(goal_z,goal_x)
-    target_tag = 24
+    target_tag = 39
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
@@ -620,9 +787,21 @@ def goto(goal_x, goal_z):
     current_tag = goto_tag(target_tag)
     #if current tag is our final target, we're done.
     if current_tag == target_tag:
-        print("Target acquired: We're here")
+        print("Target acquired: We're at " +str(target_tag))
     halt()
+    target_tag = 33
+    tag_sequence = []
+    seen = []
+    with open('tagSequence2.txt', 'r') as f:
+        for line in f.readlines():
+            tag_sequence.append(int(line))
 
+    #Get to some starting tag
+    print("Determined the target tag is tag #{}".format(target_tag))
+    current_tag = goto_tag(target_tag)
+    if current_tag == target_tag:
+        print("Target acquired: We're at " +str(target_tag))
+    halt()
 
     # while (not stop) and (current_tag is not target_tag):
     #     #figure out what the next tag we need to drive to is
@@ -666,6 +845,7 @@ def followPerson():
         time.sleep(.1)
         atags = detector.detect(frame)
         temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+        temp_origin = np.array(temp_origin, dtype=np.float32).reshape((4,3,1))
         found = 0
         for tag in atags:
             corners = tag.corners
