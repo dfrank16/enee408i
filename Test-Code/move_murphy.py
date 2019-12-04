@@ -655,7 +655,7 @@ def goto_tag(target):
             print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  abs(pose[0]) > 6.0:
+            if  abs(pose[0]) > 7.25:
                 if x<150:
                     left()
                     print("left")
