@@ -613,7 +613,7 @@ def goto(goal_x, goal_z):
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
     current_tag = current_tag.tag_id
-    current_tag = goto_tag(current_tag)
+    current_tag = goto_tag(target_tag)
     #if current tag is our final target, we're done.
     if current_tag == target_tag:
         print("Target acquired: We're here")
