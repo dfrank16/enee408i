@@ -581,7 +581,8 @@ def goto_tag(target):
                     backward()
                     time.sleep(0.2)
                     halt()
-                return target_tag
+                if tag.tag_id == target_tag:
+                    return 1
         else:
             #Search for the target tag if we can't see it.
             #TODO: Add more complex/better search code for when we can't see the target
