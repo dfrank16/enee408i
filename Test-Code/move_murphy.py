@@ -26,7 +26,7 @@ import multiprocessing as mp
 cvQueue1, cvQueue2 = mp.JoinableQueue(), mp.JoinableQueue()
 
 ser = serial.Serial('/dev/ttyACM0',9600)
-ser.timeout = 0.5
+ser.timeout = 0.2
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -102,6 +102,7 @@ def start_camera(queue1, queue2):
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
 			frame = temp_frame
 			if not queue1.empty():
+                print("florb")
 				florb = queue1.get()
 				queue1.task_done()
 				queue2.put(frame)
