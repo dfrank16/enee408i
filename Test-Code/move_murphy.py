@@ -313,7 +313,7 @@ def wander_command(command):
 def attack():
     goto_thread = threading.Thread(target=goto, args=(15,0,), name="goto")
     goto_thread.start()
-    return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
+    return question("Arghhh!").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 @ask.intent('FollowMeIntent')
 def followMeHandler():
@@ -551,7 +551,7 @@ def goto_tag(target):
             print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  abs(pose[0]) > 7.5:
+            if  abs(pose[0]) > 10.0:
                 if x<150:
                     left()
                     print("left")
@@ -588,10 +588,26 @@ def goto_tag(target):
         else:
             #Search for the target tag if we can't see it.
             #TODO: Add more complex/better search code for when we can't see the target
-            print("I can't see you! Turn left")
+            print("I can't see you! Turn " + last)
             
-            if step_counter < 10:
-                left()
+            if step_counter == 0:
+                if last == "left":
+                    right()
+                    last = "right"
+                elif last == "right":
+                    left()
+                    last = "left"
+           # time.sleep(0.075)
+                time.sleep(2*stop_time)
+                halt()
+                step_counter += 1
+            elif step_counter < 10:
+                if last == "right":
+                    right()
+                    last = "right"
+                elif last == "left":
+                    left()
+                    last = "left"
            # time.sleep(0.075)
                 time.sleep(step_time)
                 halt()
@@ -607,12 +623,13 @@ def goto_tag(target):
 
 def goto(goal_x, goal_z):
     global stop
+    global tag_sequence
     sleep_time = 0.05
     #stop = False
     print("Received command to go to x = {}, y = {}".format(goal_x, goal_z))
     #Determine our final target
     #target_tag = findClosestTag(goal_z,goal_x)
-    target_tag = 24
+    target_tag = 39
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
@@ -620,8 +637,21 @@ def goto(goal_x, goal_z):
     current_tag = goto_tag(target_tag)
     #if current tag is our final target, we're done.
     if current_tag == target_tag:
-        print("Target acquired: We're here")
+        print("Target acquired: We're at " +str(target_tag))
     halt()
+    target_tag = 24
+    #Get to some starting tag
+    print("Determined the target tag is tag #{}".format(target_tag))
+    current_tag = get_closest(target_tag)
+    current_tag = current_tag.tag_id
+    current_tag = goto_tag(target_tag)
+    if current_tag == target_tag:
+        print("Target acquired: We're at " +str(target_tag))
+    halt()
+    tag_sequence = []
+    with open('tagSequence2.txt', 'r') as f:
+        for line in f.readlines():
+            tag_sequence.append(int(line))
 
 
     # while (not stop) and (current_tag is not target_tag):
