@@ -54,10 +54,10 @@ stop = False
 drive_state = 0
 frame = None
 world_points = {}
-camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
-
-camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
-
+#camera_matrix = [[1.78083891e+03, 0.00000000e+00, 9.35628820e+02], [0.00000000e+00, 2.15671011e+03, 5.38832732e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
+camera_matrix = [[1102.2685765043407, 0.0, 1005.8822521774567], [0.0, 1104.9939493307077, 592.2828735697244], [0.0, 0.0, 1.0]]
+#camera_distortions = [[ 1.41784728e+00, -5.29012388e+01, 4.59024886e-04, 3.03192456e-02,4.97251723e+02]]
+camera_distortions = [[-0.08959985635048899], [0.0001713488859657656], [-0.06283449521732573], [0.04151141258421837]]
 camera_distortions = np.array(camera_distortions)
 camera_matrix = np.array(camera_matrix)
 tag_sequence = []
@@ -478,7 +478,7 @@ def receive():
 def getNextTag(current,target):
     global tag_sequence
     curr_i = tag_sequence.index(current)
-    target_i = tag_seuqnce.index(target)
+    target_i = tag_sequence.index(target)
     if curr_i < target_i:
         return tag_sequence[curr_i + 1]
     else:
@@ -515,18 +515,23 @@ def goto_tag(target):
                 break
         if found:
             #try to keep the center of the tag in the center of the frame
+            print("I see tag #{}".format(target_tag))
             x = tag.center[0]
             pose = get_pose(tag.corners, temp_origin)
+            print("Pose[0]: {}".format(pose[0]))
             if  pose[0] > 10.0:
                 if x<150:
                     left()
                     print("left")
+                    time.sleep(0.2)
                 elif x>410:
                     right()
                     print("right")
+                    time.sleep(0.2)
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
+                    time.sleep(0.2)
             else:
                 print("You're close enough. halt and return")
                 halt()
@@ -536,7 +541,7 @@ def goto_tag(target):
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
             left()
-            time.sleep(0.25)
+            time.sleep(0.1)
             halt()
     halt()
 
