@@ -352,6 +352,12 @@ def medicine():
         taken = True
         return question("No, but you should take your medicine now.").reprompt("What would you like murphy to do now?")
 
+@ask.intent('MedicineTakenIntent')
+def medicineTaken():
+    global taken
+    taken = True
+    return question("Nice job. I'll mark that down for you.").reprompt("What would you like murphy to do now?")
+
 @ask.intent('AttackIntent')
 def attack():
     tag_seq()
@@ -391,6 +397,8 @@ def default():
 
 @ask.intent('SleepIntent')
 def sleep():
+    global taken
+    taken = False
     halt()
     print("WE sleepING boiis")
     return statement('Murphy says he is snoring. Bye!')
