@@ -304,7 +304,8 @@ def wander_command(command):
 
 @ask.intent('AttackIntent')
 def attack():
-    goto(15, 0)
+    goto_thread = threading.Thread(target=goto, args=(15,0,), name="goto")
+    goto_thread.start()
     return question("Perkele!").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 @ask.intent('FollowMeIntent')
@@ -495,6 +496,7 @@ def goto_tag(target):
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+    last = "forward"
 
     print("Attempting to navigate to tag #{}".format(target))
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
@@ -524,24 +526,38 @@ def goto_tag(target):
                     left()
                     print("left")
                     time.sleep(0.2)
+                    last = "left"
                 elif x>410:
                     right()
                     print("right")
                     time.sleep(0.2)
+                    last = "right"
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
-                    time.sleep(0.2)
+                    time.sleep(0.1)
             else:
                 print("You're close enough. halt and return")
                 halt()
+                if last == "left":
+                    right()
+                    time.sleep(0.3)
+                    backward()
+                    time.sleep(0.2)
+                    halt()
+                elif last == "right":
+                    left()
+                    time.sleep(0.3)
+                    backward()
+                    time.sleep(0.2)
+                    halt()
                 return target_tag
         else:
             #Search for the target tag if we can't see it.
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
             left()
-            time.sleep(0.1)
+           # time.sleep(0.075)
             halt()
     halt()
 
@@ -562,7 +578,7 @@ def goto(goal_x, goal_z):
         next_tag = getNextTag(current_tag, target_tag)
         #drive to next target
         print("Next tag: {}, Current Tag:{}".format(next_tag,current_tag))
-        goto_tag(next_tag)
+        current_tag = goto_tag(next_tag)
         #if current tag is our final target, we're done.
         if current_tag == target_tag:
             print("Target acquired: We're here")
