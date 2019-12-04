@@ -530,6 +530,12 @@ def goto_tag(target):
     print("Attempting to navigate to tag #{}".format(target))
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
     target_tag = None if target == -1 else target
+    while not cvQueue1.empty():
+        cvQueue1.get()
+        cvQueue1.task_done()
+    while not cvQueue2.empty():
+        cvQueue2.get()
+        cvQueue2.task_done()
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
     while not stop:   
         
