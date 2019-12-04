@@ -22,7 +22,7 @@ import imutils
 import json
 import threading
 import math
-
+import multiprocessing as mp
 ser = serial.Serial('/dev/ttyACM0',9600)
 ser.timeout = 1.0
 waiting = True
@@ -95,7 +95,7 @@ def start_camera():
 	vs = VideoStream(src=1).start()
 	time.sleep(3.0)
 	while True:
-		#time.sleep(.1)
+		time.sleep(.1)
 		temp_frame = vs.read()
 		if temp_frame is not None:
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
@@ -558,7 +558,7 @@ def goto_tag(target):
             print("I can't see you! Turn left")
             left()
            # time.sleep(0.075)
-            halt()
+            
     halt()
 
 
