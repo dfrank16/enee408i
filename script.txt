@@ -10,11 +10,15 @@ wander
 
 halt
 
-(Various alexa stuff)
+forward
 
+throw it in reverse
 
+turn left
 
+turn right
 
+dance
 
 have I taken my medicine
 
