@@ -498,6 +498,7 @@ def getNextTag(current,target):
 # returns the id of the tag we've driven to.
 def goto_tag(target):
     global stop
+    stop_time = 0.25
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
@@ -535,16 +536,16 @@ def goto_tag(target):
             x = tag.center[0]
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  pose[0] > 10.0:
+            if  abs(pose[0]) > 10.0:
                 if x<150:
                     left()
                     print("left")
-                    time.sleep(0.2)
+                    time.sleep(stop_time)
                     last = "left"
                 elif x>410:
                     right()
                     print("right")
-                    time.sleep(0.2)
+                    time.sleep(stop_time)
                     last = "right"
                 elif x>=150 and x <= 410:
                     forward()
@@ -574,7 +575,7 @@ def goto_tag(target):
            # time.sleep(0.075)
             
 
-            time.sleep(0.1)
+            time.sleep(stop_time)
             halt()
 
     halt()
