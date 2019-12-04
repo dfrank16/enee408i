@@ -512,7 +512,7 @@ def get_closest(target_tag):
         if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
             print(tag.tag_id)
             delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
-            current_tag = tag.tag_id
+            current_tag = tag
     return current_tag
 
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
@@ -534,9 +534,9 @@ def goto_tag(target):
     while not stop:   
         
         print("Looking for tag #{}".format(target_tag))
-        goal_tag = get_closest(target)
+        tag = get_closest(target)
         ser.reset_output_buffer()         
-        found = goal_tag != -1
+        found = tag is not None
         if found:
             #try to keep the center of the tag in the center of the frame
             print("I see tag #{}".format(target_tag))
@@ -604,6 +604,7 @@ def goto(goal_x, goal_z):
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
+    current_tag = current_tag.tag_id
 
 
 
