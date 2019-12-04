@@ -507,6 +507,7 @@ def get_closest(target_tag):
     print(atags)
     delta = 100
     if len(atags) == 0:
+        print("bleh")
         return None
     for tag in atags:
         if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
@@ -541,10 +542,9 @@ def goto_tag(target):
         
         tag = get_closest(target)
         time.sleep(0.1)
-        print("Looking for tag #{}".format(tag.tag_id))
-        ser.reset_output_buffer()         
-        found = tag is not None
-        if found:
+        # print("Looking for tag #{}".format(tag.tag_id))
+        ser.reset_output_buffer()
+        if tag is not None:
             #try to keep the center of the tag in the center of the frame
             print("I see tag #{}".format(tag.tag_id))
             x = tag.center[0]
