@@ -102,7 +102,7 @@ def start_camera(queue1, queue2):
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
 			frame = temp_frame
 			if not queue1.empty():
-                print("florb")
+				print("florb")
 				florb = queue1.get()
 				queue1.task_done()
 				queue2.put(frame)
@@ -500,7 +500,7 @@ def getNextTag(current,target):
 def goto_tag(target):
     global ser
     global stop
-    stop_time = 0.4
+    stop_time = .75
     step_counter = 0
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
