@@ -704,6 +704,13 @@ def goto_tag(target):
                 ser.open()
                 print("You're close enough. halt and return")
                 seen.append(tag.tag_id)
+                dlrop = abs(tag_sequence.index(target_tag) - tag_sequence.index(tagy))
+                for tagy in tag_sequence:
+                    delt = abs(tag_sequence.index(target_tag) - tag_sequence.index(tagy))
+                    if delt > dlrop:
+                        seen.append(tagy)
+
+
                 halt()
                 if last == "left":
                     print("HaltRight")
