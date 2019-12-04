@@ -789,7 +789,7 @@ def goto(goal_x, goal_z):
     if current_tag == target_tag:
         print("Target acquired: We're at " +str(target_tag))
     halt()
-    target_tag = 24
+    target_tag = 33
     tag_sequence = []
     seen = []
     with open('tagSequence2.txt', 'r') as f:
