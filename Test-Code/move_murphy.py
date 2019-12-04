@@ -510,7 +510,7 @@ def goto_tag(target):
     while not stop:            
         time.sleep(0.1)
         cvQueue1.put(1)
-        cvQueue.join()
+        cvQueue1.join()
         time.sleep(0.1)
         frame = cvQueue2.get()
         cvQueue2.task_done()
