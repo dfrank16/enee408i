@@ -676,12 +676,14 @@ def goto_tag(target):
                 print("You're close enough. halt and return")
                 halt()
                 if last == "left":
+                    print("HaltRight")
                     right()
                     time.sleep(0.3)
                     backward()
                     time.sleep(0.2)
                     halt()
                 else:
+                    print("HaltLeft")
                     left()
                     time.sleep(0.3)
                     backward()
