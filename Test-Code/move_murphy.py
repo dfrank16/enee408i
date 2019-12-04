@@ -710,6 +710,9 @@ def goto_tag(target):
                 halt()
                 step_counter += 1
             elif step_counter < 10:
+                if step_counter == 5:
+                    ser.close()
+                    ser.open()
                 if last == "right":
                     right()
                     last = "right"
@@ -721,6 +724,8 @@ def goto_tag(target):
                 halt()
                 step_counter += 1
             else:
+                ser.close()
+                ser.open()
                 wander()
                 time.sleep(7)
                 step_counter = 0
