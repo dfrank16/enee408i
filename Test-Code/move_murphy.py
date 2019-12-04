@@ -594,7 +594,7 @@ def goto_tag(target):
                 if last == "left":
                     right()
                     last = "right"
-                elif last == "right":
+                else:
                     left()
                     last = "left"
            # time.sleep(0.075)
@@ -605,7 +605,7 @@ def goto_tag(target):
                 if last == "right":
                     right()
                     last = "right"
-                elif last == "left":
+                else:
                     left()
                     last = "left"
            # time.sleep(0.075)
