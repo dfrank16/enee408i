@@ -600,9 +600,8 @@ def goto(goal_x, goal_z):
     target_tag = findClosestTag(goal_z,goal_x)
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
-    current_tag = goto_tag(-1)
+    current_tag = -1
 
-    apriltag = 
     cvQueue1.put(1)
     cvQueue1.join()
     time.sleep(0.1)
@@ -610,6 +609,7 @@ def goto(goal_x, goal_z):
     cvQueue2.task_done()
     detector = apriltag.Detector()
     atags = detector.detect(frame)
+    print(atags)
     delta = 100
     for tag in atags:
         if abs(tag_sequence.index(tag) - tag_sequence.index(target_tag)) < delta:
