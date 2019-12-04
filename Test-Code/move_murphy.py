@@ -612,7 +612,8 @@ def goto(goal_x, goal_z):
     atags = detector.detect(frame)
     delta = 100
     for tag in atags:
-        if abs(tag_sequence.index(tag) - tag_sequence.index(target_tag)):
+        if abs(tag_sequence.index(tag) - tag_sequence.index(target_tag)) < delta:
+            print(tag.id)
             delta = abs(tag_sequence.index(tag) - tag_sequence.index(target_tag))
             current_tag = tag.id
 
