@@ -624,7 +624,7 @@ def get_closest(target_tag):
 
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
 # returns the id of the tag we've driven to.
-def goto_tag(target, stop_time):
+def goto_tag(target):
     global ser
     global stop
     stop_time = 0.1
