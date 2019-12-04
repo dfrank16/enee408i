@@ -624,7 +624,7 @@ def get_closest(target_tag):
 
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
 # returns the id of the tag we've driven to.
-def goto_tag(target):
+def goto_tag(target, stop_time):
     global ser
     global stop
     stop_time = 0.1
@@ -633,6 +633,9 @@ def goto_tag(target):
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
     last = "forward"
+    lcount = 0
+    rcount = 0
+    fcount = 0
 
     print("Attempting to navigate to tag #{}".format(target))
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
@@ -663,17 +666,36 @@ def goto_tag(target):
                     print("left")
                     time.sleep(stop_time)
                     last = "left"
+                    lcount += 1
+                    fcount= 0
+                    rcount = 0
+                    if lcount > 5:
+                        backward()
+                        time.sleep(3)
                 elif x>410:
                     right()
                     print("right")
                     time.sleep(stop_time)
                     last = "right"
+                    rcount += 1
+                    fcount= 0
+                    lcount = 0
+                    if rcount > 5:
+                        backward()
+                        time.sleep(3)
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
                     time.sleep(1.5)
                     halt()
                     time.sleep(stop_time)
+                    fcount += 1
+                    lcount= 0
+                    rcount = 0
+                    if fcount > 5:
+                        backward()
+                        time.sleep(3)
+
             else:
                 ser.close()
                 ser.open()
@@ -709,7 +731,7 @@ def goto_tag(target):
                     left()
                     last = "left"
            # time.sleep(0.075)
-                time.sleep(2*stop_time)
+                time.sleep(stop_time)
                 halt()
                 step_counter += 1
             elif step_counter < 10:
@@ -723,7 +745,7 @@ def goto_tag(target):
                     left()
                     last = "left"
            # time.sleep(0.075)
-                time.sleep(step_time)
+                time.sleep(0.4)
                 halt()
                 step_counter += 1
             else:
