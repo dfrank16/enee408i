@@ -681,7 +681,7 @@ def goto_tag(target):
                     backward()
                     time.sleep(0.2)
                     halt()
-                elif last == "right":
+                else:
                     left()
                     time.sleep(0.3)
                     backward()
