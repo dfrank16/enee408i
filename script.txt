@@ -10,10 +10,15 @@ wander
 
 halt
 
-Various alexa stuff...
+forward
 
+throw it in reverse
 
+turn left
 
+turn right
+
+dance
 
 have I taken my medicine
 
@@ -21,7 +26,7 @@ have I taken my medicine
 
 follow me
 
-continue (Might add an intent that's blank but will only a prompt and repormt to keep the app open)
+keep going
 
 halt
 

@@ -275,12 +275,19 @@ def wander_command(command):
 def danceIntent():
     t = threading.Thread(target=dance, name='t_dance')
     t.start()
-    danceString = """To the left, take it back now yall. One hop this time <breaktime="2s"> . Right foot let's,,,,,,,, stomp. 
-                    Left foot let's stomp. Cha cha real smooth. Doot do doot do. Doot do doot do. Doot do doot do. 
+    danceString = """To the left, take it back now yall. One hop this time. Right foot let's stomp. 
+                    Left foot let's stomp. Cha cha real smooth. Doot do doot do. Doot do do. 
+                    Wookie wookie wow.
+                    Soulja boy off in this ohhh. Watch me crank it, watch me roll.
+                    Watch me crank dat Soulja boy then superman that oh.
+                    Wookie wookie wow.
+                    All the single ladies. All the single ladies. All the single ladies.
+                    All the single ladies. Now put your hands up.
                      """
     return question(danceString).reprompt("Yo dog, my moves are fresh. What do you want me to do next?")
 
 def dance():
+    # Cha cha slide
     left()
     time.sleep(2.0)
     backward()
@@ -294,15 +301,52 @@ def dance():
     right()
     time.sleep(1.0)
     left()
-    time.sleep(0.5)
+    time.sleep(1.0)
     halt()
     time.sleep(1.0)
-    for i in range(0, 3):
+    for i in range(0, 2):
         left()
         time.sleep(0.5)
         right()
         time.sleep(0.5)
     halt()
+    time.sleep(2.0)
+    # Crank dat
+    left()
+    time.sleep(1.0)
+    right()
+    time.sleep(1.0)
+    halt()
+    time.sleep(0.5)
+    forward()
+    time.sleep(0.5)
+    halt()
+    time.sleep(2.0)
+    # All the single ladies
+    for i in range(0, 3):
+        left()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        right()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        left()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        right()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    forward()
+    time.sleep(1.5)
+    halt()
+    
 
 @ask.intent('MedicineIntent')
 def medicine():
