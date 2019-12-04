@@ -673,6 +673,7 @@ def goto_tag(target):
                         backward()
                         time.sleep(1.5)
                         halt()
+                        lcount = 0
                 elif x>410:
                     right()
                     print("right")
@@ -685,6 +686,7 @@ def goto_tag(target):
                         backward()
                         time.sleep(1.5)
                         halt()
+                        rcount = 0
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
@@ -698,6 +700,7 @@ def goto_tag(target):
                         backward()
                         time.sleep(1.5)
                         halt()
+                        fcount = 0
 
             else:
                 ser.close()
