@@ -63,6 +63,7 @@ camera_distortions = [[-0.08959985635048899], [0.0001713488859657656], [-0.06283
 camera_distortions = np.array(camera_distortions)
 camera_matrix = np.array(camera_matrix)
 tag_sequence = []
+seen = []
 taken = False
 
 
@@ -598,6 +599,7 @@ def getNextTag(current,target):
 
 def get_closest(target_tag):
     global tag_sequence
+    global seen
     current_tag = -1
 
     cvQueue1.put(1)
@@ -614,7 +616,7 @@ def get_closest(target_tag):
         return None
     for tag in atags:
         print("Atag: " + str(tag.tag_id))
-        if tag.tag_id in tag_sequence and abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
+        if tag.tag_id in tag_sequence and not tag.tag_id in seen and abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
             print("New Delta " + str(tag.tag_id))
             delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
             current_tag = tag
@@ -655,7 +657,7 @@ def goto_tag(target):
             print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  abs(pose[0]) > 6.0:
+            if  abs(pose[0]) > 7.25:
                 if x<150:
                     left()
                     print("left")
@@ -676,6 +678,7 @@ def goto_tag(target):
                 ser.close()
                 ser.open()
                 print("You're close enough. halt and return")
+                seen.append(tag.tag_id)
                 halt()
                 if last == "left":
                     print("HaltRight")
@@ -753,6 +756,7 @@ def goto(goal_x, goal_z):
     halt()
     target_tag = 24
     tag_sequence = []
+    seen = []
     with open('tagSequence2.txt', 'r') as f:
         for line in f.readlines():
             tag_sequence.append(int(line))
