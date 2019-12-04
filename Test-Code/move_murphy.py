@@ -597,6 +597,7 @@ def getNextTag(current,target):
 #    if target == -1:
 
 def get_closest(target_tag):
+    global tag_sequence
     current_tag = -1
 
     cvQueue1.put(1)
@@ -612,8 +613,9 @@ def get_closest(target_tag):
         print("bleh")
         return None
     for tag in atags:
+        print("Atag: " + str(tag.tag_id))
         if tag in tag_sequence and abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
-            print(tag.tag_id)
+            print("New Delta " + str(tag.tag_id))
             delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
             current_tag = tag
     return current_tag
@@ -729,6 +731,7 @@ def goto(goal_x, goal_z):
     sleep_time = 0.05
     #stop = False
     print("Received command to go to x = {}, y = {}".format(goal_x, goal_z))
+    print(tag_sequence)
     #Determine our final target
     #target_tag = findClosestTag(goal_z,goal_x)
     target_tag = 39
