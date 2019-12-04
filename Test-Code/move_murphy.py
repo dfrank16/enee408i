@@ -26,7 +26,7 @@ import multiprocessing as mp
 cvQueue1, cvQueue2 = mp.JoinableQueue(), mp.JoinableQueue()
 
 ser = serial.Serial('/dev/ttyACM0',9600)
-ser.timeout = 0.2
+ser.timeout = 0.05
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -583,8 +583,10 @@ def goto_tag(target):
                 halt()
                 step_counter += 1
             else:
+                ser.close()
+                ser.open()
                 wander()
-                time.sleep(5)
+                time.sleep(7)
                 step_counter = 0
     halt()
 
