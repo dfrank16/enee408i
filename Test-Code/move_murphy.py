@@ -23,7 +23,6 @@ import json
 import threading
 import math
 import multiprocessing as mp
-
 cvQueue1, cvQueue2 = mp.JoinableQueue(), mp.JoinableQueue()
 
 ser = serial.Serial('/dev/ttyACM0',9600)
@@ -97,16 +96,16 @@ def start_camera(queue1, queue2):
 	vs = VideoStream(src=1).start()
 	time.sleep(3.0)
 	while True:
-		#time.sleep(.1)
+		time.sleep(.1)
 		temp_frame = vs.read()
 		if temp_frame is not None:
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
-            frame = temp_frame
-            if not queue1.empty():
-                florb = queue1.get()
-                queue1.task_done()
-                queue2.put(frame)
-                queue2.join()
+			frame = temp_frame
+			if not queue1.empty():
+				florb = queue1.get()
+				queue1.task_done()
+				queue2.put(frame)
+				queue2.join()
 
 #start_camera()
 
@@ -572,8 +571,12 @@ def goto_tag(target):
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
             left()
+           # time.sleep(0.075)
+            
+
             time.sleep(0.1)
             halt()
+
     halt()
 
 
