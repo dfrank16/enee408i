@@ -26,7 +26,7 @@ import multiprocessing as mp
 cvQueue1, cvQueue2 = mp.JoinableQueue(), mp.JoinableQueue()
 
 ser = serial.Serial('/dev/ttyACM0',9600)
-ser.timeout = 1.0
+ser.timeout = 0.5
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -497,8 +497,10 @@ def getNextTag(current,target):
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
 # returns the id of the tag we've driven to.
 def goto_tag(target):
+    global ser
     global stop
-    stop_time = 0.25
+    stop_time = 0.4
+    step_counter = 0
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
@@ -508,7 +510,8 @@ def goto_tag(target):
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
     target_tag = None if target == -1 else target
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
-    while not stop:            
+    while not stop:   
+        ser.reset_output_buffer()         
         time.sleep(0.1)
         cvQueue1.put(1)
         cvQueue1.join()
@@ -571,13 +574,17 @@ def goto_tag(target):
             #Search for the target tag if we can't see it.
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
-            left()
-           # time.sleep(0.075)
             
-
-            time.sleep(stop_time)
-            halt()
-
+            if step_counter < 10:
+                left()
+           # time.sleep(0.075)
+                time.sleep(stop_time)
+                halt()
+                step_counter += 1
+            else:
+                wander()
+                time.sleep(5)
+                step_counter = 0
     halt()
 
 
