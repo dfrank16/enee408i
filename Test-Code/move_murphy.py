@@ -63,6 +63,9 @@ camera_distortions = [[-0.08959985635048899], [0.0001713488859657656], [-0.06283
 camera_distortions = np.array(camera_distortions)
 camera_matrix = np.array(camera_matrix)
 tag_sequence = []
+taken = False
+
+
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
@@ -313,7 +316,8 @@ def wander_command(command):
 def attack():
     goto_thread = threading.Thread(target=goto, args=(15,0,), name="goto")
     goto_thread.start()
-    return question("Arghhh!").reprompt("Murphy has calmed down now. What would you like him to do?")
+
+    return question("Argh, attack, attack, exterminate").reprompt("Murphy has calmed down now. What would you like him to do?")
 
 @ask.intent('FollowMeIntent')
 def followMeHandler():
@@ -333,12 +337,29 @@ def stayHandler():
     return question("Murphy has halted.").reprompt("What would you like Murphy to murph now?")
 
 
+@ask.intent('MedicineIntent')
+def medicine():
+    global taken
+    if taken:
+        return question("Yes, you have taken your medication already.").reprompt("What would you like murphy to do now?")
+    else:
+        taken = True
+        return question("No, but you should take your medicine now.").reprompt("What would you like murphy to do now?")
+
+@ask.intent('MedicineTakenIntent')
+def medicineTaken():
+    global taken
+    taken = True
+    return question("Nice job. I'll mark that down for you.").reprompt("What would you like murphy to do now?")
+
+
+
 @ask.intent('RollIntent')
 def rollOver():
     right()
     time.sleep(3.0)
     halt()
-    return question("Ayyye! Murphy rolled over.").reprompt("What would you like Murphy to do now?")
+    return question("Borf, Borf, Borf!  Murphy rolled over.").reprompt("What would you like Murphy to do now?")
 
 
 @ask.intent('AMAZON.FallbackIntent')
@@ -350,10 +371,91 @@ def default():
 @ask.intent('SleepIntent')
 def sleep():
     global stop
+    global taken
+    taken = False
     stop = True
     halt()
     print("WE sleepING boiis")
     return statement('Murphy says he is snoring. Bye!')
+
+@ask.intent('DanceIntent')
+def danceIntent():
+    t = threading.Thread(target=dance, name='t_dance')
+    t.start()
+    danceString = """To the left, take it back now yall. One hop this time. Right foot let's stomp. 
+                    Left foot let's stomp. Cha cha real smooth. Doot do doot do. Doot do do. 
+                    Wookie wookie wow.
+                    Soulja boy off in this ohhh. Watch me crank it, watch me roll.
+                    Watch me crank dat Soulja boy then superman that oh.
+                    Wookie wookie wow.
+                    All the single ladies. All the single ladies. All the single ladies.
+                    All the single ladies. Now put your hands up.
+                     """
+    return question(danceString).reprompt("Yo dog, my moves are fresh. What do you want me to do next?")
+
+
+def dance():
+    # Cha cha slide
+    left()
+    time.sleep(2.0)
+    backward()
+    time.sleep(2.0)
+    halt()
+    time.sleep(0.5)
+    forward()
+    time.sleep(0.5)
+    halt()
+    time.sleep(1.5)
+    right()
+    time.sleep(1.0)
+    left()
+    time.sleep(1.0)
+    halt()
+    time.sleep(1.0)
+    for i in range(0, 2):
+        left()
+        time.sleep(0.5)
+        right()
+        time.sleep(0.5)
+    halt()
+    time.sleep(2.0)
+    # Crank dat
+    left()
+    time.sleep(1.0)
+    right()
+    time.sleep(1.0)
+    halt()
+    time.sleep(0.5)
+    forward()
+    time.sleep(0.5)
+    halt()
+    time.sleep(2.0)
+    # All the single ladies
+    for i in range(0, 3):
+        left()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        right()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        left()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    for i in range(0, 3):
+        right()
+        time.sleep(1.0)
+        halt()
+        time.sleep(0.5)
+    forward()
+    time.sleep(1.5)
+    halt()
+
+
 
 @ask.intent('SendIntent')
 def sendIntent():
@@ -362,7 +464,7 @@ def sendIntent():
     message = "distress: " + str(curr_x) + "," + str(curr_z)
     t = threading.Thread(target=send, name='t_send', args=(message,))
     t.start()
-    return question('Sent distress signal').reprompt("Are you okay? What can Murphy do to help?").reprompt("The cleaners have been notified. RIP in peace.")
+    return question('Sent distress signal').reprompt("Are you okay? What can Murphy do to help?")
 
 
 def send(message):
