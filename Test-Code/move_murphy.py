@@ -758,7 +758,7 @@ def goto_tag(target):
                     left()
                     last = "left"
            # time.sleep(0.075)
-                time.sleep(0.4)
+                time.sleep(0.65)
                 halt()
                 step_counter += 1
             else:
