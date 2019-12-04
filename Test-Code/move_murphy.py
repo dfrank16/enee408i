@@ -500,7 +500,8 @@ def getNextTag(current,target):
 def goto_tag(target):
     global ser
     global stop
-    stop_time = 0.4
+    stop_time = 0.1
+    step_time = 0.4
     step_counter = 0
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
@@ -579,7 +580,7 @@ def goto_tag(target):
             if step_counter < 10:
                 left()
            # time.sleep(0.075)
-                time.sleep(stop_time)
+                time.sleep(step_time)
                 halt()
                 step_counter += 1
             else:
