@@ -507,7 +507,7 @@ def get_closest(target_tag):
     print(atags)
     delta = 100
     if len(atags) == 0:
-        return -1
+        return None
     for tag in atags:
         if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
             print(tag.tag_id)
