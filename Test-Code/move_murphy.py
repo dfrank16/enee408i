@@ -22,9 +22,11 @@ import imutils
 import json
 import threading
 import math
+import multiprocessing as mp
+cvQueue1, cvQueue2 = mp.JoinableQueue(), mp.JoinableQueue()
 
 ser = serial.Serial('/dev/ttyACM0',9600)
-ser.timeout = 1.0
+ser.timeout = 0.05
 waiting = True
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -88,18 +90,23 @@ def create_header(strLen, headLen):
 
 #vs = VideoStream(src=1).start()
 #time.sleep(5.0)
-def start_camera():
-	global frame
+def start_camera(queue1, queue2):
     # keep looping
 	print("HELLO CAMERA")
 	vs = VideoStream(src=1).start()
 	time.sleep(3.0)
 	while True:
-		#time.sleep(.1)
+		time.sleep(.1)
 		temp_frame = vs.read()
 		if temp_frame is not None:
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
 			frame = temp_frame
+			if not queue1.empty():
+				print("florb")
+				florb = queue1.get()
+				queue1.task_done()
+				queue2.put(frame)
+				queue2.join()
 
 #start_camera()
 
@@ -395,7 +402,6 @@ def receiveIntent():
     return question('Receiving Locations').reprompt("What would you like murphy to murph now?")
 
 
-
 def receive():
     global state
     global goal_x
@@ -488,12 +494,36 @@ def getNextTag(current,target):
 #def findTag(target):
 #    if target == -1:
 
+def get_closest(target_tag):
+    current_tag = -1
+
+    cvQueue1.put(1)
+    cvQueue1.join()
+    time.sleep(0.1)
+    frame = cvQueue2.get()
+    cvQueue2.task_done()
+    detector = apriltag.Detector()
+    atags = detector.detect(frame)
+    print(atags)
+    delta = 100
+    if len(atags) == 0:
+        print("bleh")
+        return None
+    for tag in atags:
+        if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
+            print(tag.tag_id)
+            delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
+            current_tag = tag
+    return current_tag
+
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
 # returns the id of the tag we've driven to.
 def goto_tag(target):
-    global frame
+    global ser
     global stop
-    detector = apriltag.Detector()
+    stop_time = 0.1
+    step_time = 0.75
+    step_counter = 0
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
     last = "forward"
@@ -501,41 +531,43 @@ def goto_tag(target):
     print("Attempting to navigate to tag #{}".format(target))
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
     target_tag = None if target == -1 else target
+    while not cvQueue1.empty():
+        cvQueue1.get()
+        cvQueue1.task_done()
+    while not cvQueue2.empty():
+        cvQueue2.get()
+        cvQueue2.task_done()
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
-    while not stop:
-        print("Looking for tag #{}".format(target_tag))
-        found = 0
-        atags = detector.detect(frame)
-        for tag in atags: #look for our target
-            if target_tag is not None:
-                if tag.tag_id == target_tag:
-                    found = 1
-                    break
-            else:#if target is undefined, we will lock onto the first tag we see
-                target_tag = tag.tag_id
-                found = 1
-                break
-        if found:
+    while not stop:   
+        
+        tag = get_closest(target)
+        time.sleep(0.1)
+        # print("Looking for tag #{}".format(tag.tag_id))
+        ser.reset_output_buffer()
+        if tag is not None:
             #try to keep the center of the tag in the center of the frame
-            print("I see tag #{}".format(target_tag))
+            print("I see tag #{}".format(tag.tag_id))
             x = tag.center[0]
+            print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  pose[0] > 10.0:
+            if  abs(pose[0]) > 7.5:
                 if x<150:
                     left()
                     print("left")
-                    time.sleep(0.2)
+                    time.sleep(stop_time)
                     last = "left"
                 elif x>410:
                     right()
                     print("right")
-                    time.sleep(0.2)
+                    time.sleep(stop_time)
                     last = "right"
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
-                    time.sleep(0.1)
+                    time.sleep(0.8)
+                    halt()
+                    time.sleep(stop_time)
             else:
                 print("You're close enough. halt and return")
                 halt()
@@ -551,14 +583,25 @@ def goto_tag(target):
                     backward()
                     time.sleep(0.2)
                     halt()
-                return target_tag
+                if tag.tag_id == target_tag:
+                    return 1
         else:
             #Search for the target tag if we can't see it.
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
-            left()
+            
+            if step_counter < 10:
+                left()
            # time.sleep(0.075)
-            halt()
+                time.sleep(step_time)
+                halt()
+                step_counter += 1
+            else:
+                ser.close()
+                ser.open()
+                wander()
+                time.sleep(7)
+                step_counter = 0
     halt()
 
 
@@ -568,22 +611,30 @@ def goto(goal_x, goal_z):
     #stop = False
     print("Received command to go to x = {}, y = {}".format(goal_x, goal_z))
     #Determine our final target
-    target_tag = findClosestTag(goal_z,goal_x)
+    #target_tag = findClosestTag(goal_z,goal_x)
+    target_tag = 24
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
-    current_tag = goto_tag(-1)
-
-    while (not stop) and (current_tag is not target_tag):
-        #figure out what the next tag we need to drive to is
-        next_tag = getNextTag(current_tag, target_tag)
-        #drive to next target
-        print("Next tag: {}, Current Tag:{}".format(next_tag,current_tag))
-        current_tag = goto_tag(next_tag)
-        #if current tag is our final target, we're done.
-        if current_tag == target_tag:
-            print("Target acquired: We're here")
-            break
+    current_tag = get_closest(target_tag)
+    current_tag = current_tag.tag_id
+    current_tag = goto_tag(target_tag)
+    #if current tag is our final target, we're done.
+    if current_tag == target_tag:
+        print("Target acquired: We're here")
     halt()
+
+
+    # while (not stop) and (current_tag is not target_tag):
+    #     #figure out what the next tag we need to drive to is
+    #     next_tag = getNextTag(current_tag, target_tag)
+    #     #drive to next target
+    #     print("Next tag: {}, Current Tag:{}".format(next_tag,current_tag))
+    #     current_tag = goto_tag(next_tag)
+    #     #if current tag is our final target, we're done.
+    #     if current_tag == target_tag:
+    #         print("Target acquired: We're here")
+    #         break
+    
 
 
 
@@ -602,7 +653,12 @@ def findDistress():
 def followPerson():
     global stop
     global followFlag
-    time.sleep(2.0)
+    time.sleep(1.0)
+    cvQueue1.put(1)
+    cvQueue1.join()
+    time.sleep(1.0)
+    frame = cvQueue2.get()
+    cvQueue2.task_done()
     detector = apriltag.Detector()
 
 	# keep looping
@@ -678,15 +734,14 @@ def get_position():
         curr_x = x_bar
         curr_z = z_bar
 
-
-camthread = threading.Thread(target=start_camera, name='camthread')
-camthread.start()
-while frame is None:
-	time.sleep(0.5)
-print("starting app")
-murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
-murphythread.setDaemon(True)
-murphythread.start()
+if __name__ == "__main__":
+    camthread = mp.Process(target=start_camera, name='camthread', args=(cvQueue1, cvQueue2,))
+    camthread.start()
+    time.sleep(0.5)
+    print("starting app")
+    murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
+    murphythread.setDaemon(True)
+    murphythread.start()
 
 
 
