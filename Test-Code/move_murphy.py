@@ -600,7 +600,7 @@ def getNextTag(current,target):
 def get_closest(target_tag):
     global tag_sequence
     global seen
-    current_tag = -1
+    current_tag = None
 
     cvQueue1.put(1)
     cvQueue1.join()
