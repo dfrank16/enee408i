@@ -1,0 +1,30 @@
+~~~ Script ~~~
+
+computer, run murphy app
+
+wander
+
+wander
+
+wander
+
+halt
+
+Various alexa stuff...
+
+
+
+
+have I taken my medicine
+
+have I taken my medicine
+
+follow me
+
+continue (Might add an intent that's blank but will only a prompt and repormt to keep the app open)
+
+halt
+
+attack
+
+sleep

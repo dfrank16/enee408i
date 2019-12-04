@@ -36,6 +36,7 @@ logging.getLogger('flask_ask').setLevel(logging.INFO)
 
 # import the necessary packages
 followFlag = 0
+taken = False
 state = 0
 goal_x = 0.0
 goal_z = 0.0
@@ -50,6 +51,7 @@ x_pos = 90.0
 x_neg = -90.0
 frame = None
 stop = False
+taken = False
 
 HEADER_LENGTH = 10
 IP = "192.168.43.59"
@@ -185,6 +187,10 @@ def launched():
     return question("Hello. what would you like Murphy to do?").reprompt(
         "if you don't need Murphy, please tell him to go to sleep.")
 
+@ask.intent('ContinueIntent')
+def continueIntent():
+    return question("").reprompt("What would you like murphy to do now?")
+
 @ask.intent('MoveIntent')
 def move(direction):
     msg = ""
@@ -269,9 +275,9 @@ def wander_command(command):
 def danceIntent():
     t = threading.Thread(target=dance, name='t_dance')
     t.start()
-    danceString = """To the left, take it back now yall. One hop this time <break time="2s">. Right foot let's stomp. 
-                    Left foot let's stomp. Cha cha real smooth. Doot do doot do.
-                     . . . . j . j. j. l . l . l . u . u . u . u . oh oh oh oh oh c c c c c c"""
+    danceString = """To the left, take it back now yall. One hop this time <breaktime="2s"> . Right foot let's,,,,,,,, stomp. 
+                    Left foot let's stomp. Cha cha real smooth. Doot do doot do. Doot do doot do. Doot do doot do. 
+                     """
     return question(danceString).reprompt("Yo dog, my moves are fresh. What do you want me to do next?")
 
 def dance():
@@ -291,12 +297,21 @@ def dance():
     time.sleep(0.5)
     halt()
     time.sleep(1.0)
-    for i in range(0, 10):
+    for i in range(0, 3):
         left()
         time.sleep(0.5)
         right()
         time.sleep(0.5)
     halt()
+
+@ask.intent('MedicineIntent')
+def medicine():
+    global taken
+    if taken:
+        return question("Yes, you have taken your medication already.").reprompt("What would you like murphy to do now?")
+    else:
+        taken = True
+        return question("No, but you should take your medicine now.").reprompt("What would you like murphy to do now?")
 
 @ask.intent('AttackIntent')
 def attack():
