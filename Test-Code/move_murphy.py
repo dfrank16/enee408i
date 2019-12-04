@@ -509,11 +509,11 @@ def goto_tag(target):
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
     while not stop:            
         time.sleep(0.1)
-        queue1.put(1)
-        queue.join()
+        cvQueue1.put(1)
+        cvQueue.join()
         time.sleep(0.1)
-        frame = queue2.get()
-        queue2.task_done()
+        frame = cvQueue2.get()
+        cvQueue2.task_done()
         detector = apriltag.Detector()
         print("Looking for tag #{}".format(target_tag))
         found = 0
