@@ -100,12 +100,12 @@ def start_camera(queue1, queue2):
 		temp_frame = vs.read()
 		if temp_frame is not None:
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
-            frame = temp_frame
-            if not queue1.empty():
-                florb = queue1.get()
-                queue1.task_done()
-                queue2.put(frame)
-                queue2.join()
+			frame = temp_frame
+			if not queue1.empty():
+				florb = queue1.get()
+				queue1.task_done()
+				queue2.put(frame)
+				queue2.join()
 
 #start_camera()
 
@@ -571,13 +571,12 @@ def goto_tag(target):
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
             left()
-<<<<<<< HEAD
            # time.sleep(0.075)
             
-=======
+
             time.sleep(0.1)
             halt()
->>>>>>> 271cb25e6c2a37410bd6695b2d5590172bac589f
+
     halt()
 
 
@@ -702,11 +701,10 @@ def get_position():
         curr_x = x_bar
         curr_z = z_bar
 
-if __name__ == "main":
+if __name__ == "__main__":
     camthread = mp.Process(target=start_camera, name='camthread', args=(cvQueue1, cvQueue2,))
     camthread.start()
-    while frame is None:
-        time.sleep(0.5)
+    time.sleep(0.5)
     print("starting app")
     murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
     murphythread.setDaemon(True)
