@@ -763,8 +763,6 @@ def goto(goal_x, goal_z):
 
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
-    current_tag = get_closest(target_tag)
-    current_tag = current_tag.tag_id
     current_tag = goto_tag(target_tag)
     if current_tag == target_tag:
         print("Target acquired: We're at " +str(target_tag))
