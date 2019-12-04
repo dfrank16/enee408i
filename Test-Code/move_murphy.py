@@ -546,7 +546,7 @@ def goto_tag(target):
         found = tag is not None
         if found:
             #try to keep the center of the tag in the center of the frame
-            print("I see tag #{}".format(tag))
+            print("I see tag #{}".format(tag.tag_id))
             x = tag.center[0]
             print(x)
             pose = get_pose(tag.corners, temp_origin)
