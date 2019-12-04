@@ -316,11 +316,8 @@ def wander_command(command):
 def attack():
     goto_thread = threading.Thread(target=goto, args=(15,0,), name="goto")
     goto_thread.start()
-<<<<<<< HEAD
+
     return question("Argh, attack, attack, exterminate").reprompt("Murphy has calmed down now. What would you like him to do?")
-=======
-    return question("Arghhh!").reprompt("Murphy has calmed down now. What would you like him to do?")
->>>>>>> 16d06568ca540217595738eab1b85fc6aa4a4eab
 
 @ask.intent('FollowMeIntent')
 def followMeHandler():
