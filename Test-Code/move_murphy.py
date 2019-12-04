@@ -500,9 +500,9 @@ def getNextTag(current,target):
 def goto_tag(target):
     global ser
     global stop
-    stop_time = .75
+    stop_time = 0.1
+    step_time = 0.75
     step_counter = 0
-    detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
     temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
     last = "forward"
@@ -579,7 +579,7 @@ def goto_tag(target):
             if step_counter < 10:
                 left()
            # time.sleep(0.075)
-                time.sleep(stop_time)
+                time.sleep(step_time)
                 halt()
                 step_counter += 1
             else:
@@ -601,6 +601,22 @@ def goto(goal_x, goal_z):
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = goto_tag(-1)
+
+     
+    cvQueue1.put(1)
+    cvQueue1.join()
+    time.sleep(0.1)
+    frame = cvQueue2.get()
+    cvQueue2.task_done()
+    detector = apriltag.Detector()
+    atags = detector.detect(frame)
+    delta = 100
+    for tag in atags:
+        if abs(tag_sequence.index(tag) - tag_sequence.index(target_tag)):
+            delta = abs(tag_sequence.index(tag) - tag_sequence.index(target_tag))
+            current_tag = tag.id
+
+
 
     while (not stop) and (current_tag is not target_tag):
         #figure out what the next tag we need to drive to is
