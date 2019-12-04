@@ -845,6 +845,7 @@ def followPerson():
         time.sleep(.1)
         atags = detector.detect(frame)
         temp_origin = np.matrix([[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]])
+        temp_origin = np.array(temp_origin, dtype=np.float32).reshape((4,3,1))
         found = 0
         for tag in atags:
             corners = tag.corners
