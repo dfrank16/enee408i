@@ -612,10 +612,10 @@ def goto(goal_x, goal_z):
     print(atags)
     delta = 100
     for tag in atags:
-        if abs(tag_sequence.index(tag.id) - tag_sequence.index(target_tag)) < delta:
-            print(tag.id)
-            delta = abs(tag_sequence.index(tag) - tag_sequence.index(target_tag))
-            current_tag = tag.id
+        if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
+            print(tag.tag_id)
+            delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
+            current_tag = tag.tag_id
 
 
 
