@@ -22,6 +22,9 @@ import imutils
 import json
 import threading
 import math
+import multiprocessing as mp
+
+cvQueue1, cvQueue2 = mp.JoinableQueue(), mp.JoinableQueue()
 
 ser = serial.Serial('/dev/ttyACM0',9600)
 ser.timeout = 1.0
@@ -88,8 +91,7 @@ def create_header(strLen, headLen):
 
 #vs = VideoStream(src=1).start()
 #time.sleep(5.0)
-def start_camera():
-	global frame
+def start_camera(queue1, queue2):
     # keep looping
 	print("HELLO CAMERA")
 	vs = VideoStream(src=1).start()
@@ -99,7 +101,12 @@ def start_camera():
 		temp_frame = vs.read()
 		if temp_frame is not None:
 			temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2GRAY)
-			frame = temp_frame
+            frame = temp_frame
+            if not queue1.empty():
+                florb = queue1.get()
+                queue1.task_done()
+                queue2.put(frame)
+                queue2.join()
 
 #start_camera()
 
@@ -491,7 +498,6 @@ def getNextTag(current,target):
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
 # returns the id of the tag we've driven to.
 def goto_tag(target):
-    global frame
     global stop
     detector = apriltag.Detector()
     #world origin is used for each tag to determine relative distance from Murphy to the tag
@@ -502,7 +508,14 @@ def goto_tag(target):
     #If -1 is passed as the target, we will lock onto the first tag we see. Could be improved
     target_tag = None if target == -1 else target
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
-    while not stop:
+    while not stop:            
+        time.sleep(0.1)
+        queue1.put(1)
+        queue.join()
+        time.sleep(0.1)
+        frame = queue2.get()
+        queue2.task_done()
+        detector = apriltag.Detector()
         print("Looking for tag #{}".format(target_tag))
         found = 0
         atags = detector.detect(frame)
@@ -510,10 +523,12 @@ def goto_tag(target):
             if target_tag is not None:
                 if tag.tag_id == target_tag:
                     found = 1
+                    print("Found")
                     break
             else:#if target is undefined, we will lock onto the first tag we see
                 target_tag = tag.tag_id
                 found = 1
+                print("Found")
                 break
         if found:
             #try to keep the center of the tag in the center of the frame
@@ -557,7 +572,7 @@ def goto_tag(target):
             #TODO: Add more complex/better search code for when we can't see the target
             print("I can't see you! Turn left")
             left()
-           # time.sleep(0.075)
+            time.sleep(0.1)
             halt()
     halt()
 
@@ -602,7 +617,12 @@ def findDistress():
 def followPerson():
     global stop
     global followFlag
-    time.sleep(2.0)
+    time.sleep(1.0)
+    queue1.put(1)
+    queue.join()
+    time.sleep(1.0)
+    frame = queue2.get()
+    queue2.task_done()
     detector = apriltag.Detector()
 
 	# keep looping
@@ -678,15 +698,15 @@ def get_position():
         curr_x = x_bar
         curr_z = z_bar
 
-
-camthread = threading.Thread(target=start_camera, name='camthread')
-camthread.start()
-while frame is None:
-	time.sleep(0.5)
-print("starting app")
-murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
-murphythread.setDaemon(True)
-murphythread.start()
+if __name__ == "main":
+    camthread = mp.Process(target=start_camera, name='camthread', args=(cvQueue1, cvQueue2,))
+    camthread.start()
+    while frame is None:
+        time.sleep(0.5)
+    print("starting app")
+    murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
+    murphythread.setDaemon(True)
+    murphythread.start()
 
 
 
