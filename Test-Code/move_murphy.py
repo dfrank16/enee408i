@@ -541,7 +541,7 @@ def goto_tag(target):
         
         tag = get_closest(target)
         time.sleep(0.1)
-        print("Looking for tag #{}".format(tag))
+        print("Looking for tag #{}".format(tag.tag_id))
         ser.reset_output_buffer()         
         found = tag is not None
         if found:
