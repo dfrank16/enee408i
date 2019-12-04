@@ -618,11 +618,11 @@ def followPerson():
     global stop
     global followFlag
     time.sleep(1.0)
-    queue1.put(1)
-    queue.join()
+    cvQueue1.put(1)
+    cvQueue1.join()
     time.sleep(1.0)
-    frame = queue2.get()
-    queue2.task_done()
+    frame = cvQueue2.get()
+    cvQueue2.task_done()
     detector = apriltag.Detector()
 
 	# keep looping
@@ -698,11 +698,10 @@ def get_position():
         curr_x = x_bar
         curr_z = z_bar
 
-if __name__ == "main":
+if __name__ == "__main__":
     camthread = mp.Process(target=start_camera, name='camthread', args=(cvQueue1, cvQueue2,))
     camthread.start()
-    while frame is None:
-        time.sleep(0.5)
+    time.sleep(0.5)
     print("starting app")
     murphythread = threading.Thread(target=start_app, name = 'murphythread', args=(app,))
     murphythread.setDaemon(True)
