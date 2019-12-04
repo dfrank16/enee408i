@@ -402,7 +402,6 @@ def receiveIntent():
     return question('Receiving Locations').reprompt("What would you like murphy to murph now?")
 
 
-
 def receive():
     global state
     global goal_x
@@ -495,6 +494,27 @@ def getNextTag(current,target):
 #def findTag(target):
 #    if target == -1:
 
+def get_closest(target_tag):
+    current_tag = -1
+
+    cvQueue1.put(1)
+    cvQueue1.join()
+    time.sleep(0.1)
+    frame = cvQueue2.get()
+    cvQueue2.task_done()
+    detector = apriltag.Detector()
+    atags = detector.detect(frame)
+    print(atags)
+    delta = 100
+    if len(atags) == 0:
+        return -1
+    for tag in atags:
+        if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
+            print(tag.tag_id)
+            delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
+            current_tag = tag.tag_id
+    return current_tag
+
 # Drive to the tag with the given tag_id. If -1 is passed in, we will drive to the first tag we see.
 # returns the id of the tag we've driven to.
 def goto_tag(target):
@@ -512,28 +532,11 @@ def goto_tag(target):
     target_tag = None if target == -1 else target
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
     while not stop:   
-        ser.reset_output_buffer()         
-        time.sleep(0.1)
-        cvQueue1.put(1)
-        cvQueue1.join()
-        time.sleep(0.1)
-        frame = cvQueue2.get()
-        cvQueue2.task_done()
-        detector = apriltag.Detector()
+        
         print("Looking for tag #{}".format(target_tag))
-        found = 0
-        atags = detector.detect(frame)
-        for tag in atags: #look for our target
-            if target_tag is not None:
-                if tag.tag_id == target_tag:
-                    found = 1
-                    print("Found")
-                    break
-            else:#if target is undefined, we will lock onto the first tag we see
-                target_tag = tag.tag_id
-                found = 1
-                print("Found")
-                break
+        goal_tag = get_closest(target)
+        ser.reset_output_buffer()         
+        found = goal_tag != -1
         if found:
             #try to keep the center of the tag in the center of the frame
             print("I see tag #{}".format(target_tag))
@@ -600,22 +603,7 @@ def goto(goal_x, goal_z):
     target_tag = findClosestTag(goal_z,goal_x)
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
-    current_tag = -1
-
-    cvQueue1.put(1)
-    cvQueue1.join()
-    time.sleep(0.1)
-    frame = cvQueue2.get()
-    cvQueue2.task_done()
-    detector = apriltag.Detector()
-    atags = detector.detect(frame)
-    print(atags)
-    delta = 100
-    for tag in atags:
-        if abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag)) < delta:
-            print(tag.tag_id)
-            delta = abs(tag_sequence.index(tag.tag_id) - tag_sequence.index(target_tag))
-            current_tag = tag.tag_id
+    current_tag = get_closest(target_tag)
 
 
 
