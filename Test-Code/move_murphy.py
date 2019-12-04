@@ -671,7 +671,8 @@ def goto_tag(target, stop_time):
                     rcount = 0
                     if lcount > 5:
                         backward()
-                        time.sleep(3)
+                        time.sleep(1.5)
+                        halt()
                 elif x>410:
                     right()
                     print("right")
@@ -682,7 +683,8 @@ def goto_tag(target, stop_time):
                     lcount = 0
                     if rcount > 5:
                         backward()
-                        time.sleep(3)
+                        time.sleep(1.5)
+                        halt()
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
@@ -694,7 +696,8 @@ def goto_tag(target, stop_time):
                     rcount = 0
                     if fcount > 5:
                         backward()
-                        time.sleep(3)
+                        time.sleep(1.5)
+                        halt()
 
             else:
                 ser.close()
