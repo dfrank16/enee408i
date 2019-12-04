@@ -20,13 +20,15 @@ turn right
 
 dance
 
-have I taken my medicine
+have I taken my medication yet
 
-have I taken my medicine
+I took my advil
+
+have I taken my medication yet
 
 follow me
 
-keep going
+keep it up
 
 halt
 
