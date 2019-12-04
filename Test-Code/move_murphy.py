@@ -539,14 +539,16 @@ def goto_tag(target):
     #Navigation loop: can be interrupted by setting global variable stop, set in 'halt' and 'stay' intents
     while not stop:   
         
-        print("Looking for tag #{}".format(target_tag))
         tag = get_closest(target)
+        time.sleep(0.1)
+        print("Looking for tag #{}".format(tag))
         ser.reset_output_buffer()         
         found = tag is not None
         if found:
             #try to keep the center of the tag in the center of the frame
-            print("I see tag #{}".format(target_tag))
+            print("I see tag #{}".format(tag))
             x = tag.center[0]
+            print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
             if  abs(pose[0]) > 10.0:
@@ -611,20 +613,24 @@ def goto(goal_x, goal_z):
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
     current_tag = current_tag.tag_id
-
-
-
-    while (not stop) and (current_tag is not target_tag):
-        #figure out what the next tag we need to drive to is
-        next_tag = getNextTag(current_tag, target_tag)
-        #drive to next target
-        print("Next tag: {}, Current Tag:{}".format(next_tag,current_tag))
-        current_tag = goto_tag(next_tag)
-        #if current tag is our final target, we're done.
-        if current_tag == target_tag:
-            print("Target acquired: We're here")
-            break
+    current_tag = goto_tag(next_tag)
+    #if current tag is our final target, we're done.
+    if current_tag == target_tag:
+        print("Target acquired: We're here")
     halt()
+
+
+    # while (not stop) and (current_tag is not target_tag):
+    #     #figure out what the next tag we need to drive to is
+    #     next_tag = getNextTag(current_tag, target_tag)
+    #     #drive to next target
+    #     print("Next tag: {}, Current Tag:{}".format(next_tag,current_tag))
+    #     current_tag = goto_tag(next_tag)
+    #     #if current tag is our final target, we're done.
+    #     if current_tag == target_tag:
+    #         print("Target acquired: We're here")
+    #         break
+    
 
 
 
