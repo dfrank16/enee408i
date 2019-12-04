@@ -655,7 +655,7 @@ def goto_tag(target):
             print(x)
             pose = get_pose(tag.corners, temp_origin)
             print("Pose[0]: {}".format(pose[0]))
-            if  abs(pose[0]) > 10.0:
+            if  abs(pose[0]) > 6.0:
                 if x<150:
                     left()
                     print("left")
@@ -747,6 +747,11 @@ def goto(goal_x, goal_z):
         print("Target acquired: We're at " +str(target_tag))
     halt()
     target_tag = 24
+    tag_sequence = []
+    with open('tagSequence2.txt', 'r') as f:
+        for line in f.readlines():
+            tag_sequence.append(int(line))
+
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
@@ -755,11 +760,6 @@ def goto(goal_x, goal_z):
     if current_tag == target_tag:
         print("Target acquired: We're at " +str(target_tag))
     halt()
-    tag_sequence = []
-    with open('tagSequence2.txt', 'r') as f:
-        for line in f.readlines():
-            tag_sequence.append(int(line))
-
 
     # while (not stop) and (current_tag is not target_tag):
     #     #figure out what the next tag we need to drive to is
