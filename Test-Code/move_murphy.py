@@ -608,7 +608,8 @@ def goto(goal_x, goal_z):
     #stop = False
     print("Received command to go to x = {}, y = {}".format(goal_x, goal_z))
     #Determine our final target
-    target_tag = findClosestTag(goal_z,goal_x)
+    #target_tag = findClosestTag(goal_z,goal_x)
+    target_tag = 41
     #Get to some starting tag
     print("Determined the target tag is tag #{}".format(target_tag))
     current_tag = get_closest(target_tag)
