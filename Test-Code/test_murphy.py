@@ -187,6 +187,10 @@ def launched():
     return question("Hello. what would you like Murphy to do?").reprompt(
         "if you don't need Murphy, please tell him to go to sleep.")
 
+@ask.intent('ContinueIntent')
+def continueIntent():
+    return question("").reprompt("What would you like murphy to do now?")
+
 @ask.intent('MoveIntent')
 def move(direction):
     msg = ""
@@ -304,10 +308,10 @@ def dance():
 def medicine():
     global taken
     if taken:
-        return question("Yes, you have taken your medication already.")
+        return question("Yes, you have taken your medication already.").reprompt("What would you like murphy to do now?")
     else:
         taken = True
-        return question("No, but you should take your medicine now.")
+        return question("No, but you should take your medicine now.").reprompt("What would you like murphy to do now?")
 
 @ask.intent('AttackIntent')
 def attack():
