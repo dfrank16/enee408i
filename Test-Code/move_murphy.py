@@ -669,7 +669,7 @@ def goto_tag(target):
                 elif x>=150 and x <= 410:
                     forward()
                     print("forward")
-                    time.sleep(0.8)
+                    time.sleep(1.5)
                     halt()
                     time.sleep(stop_time)
             else:
